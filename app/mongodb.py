@@ -1,16 +1,18 @@
-# app/mongodb.py
-
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-MONGODB_URI = os.getenv("MONGODB_URI")
-MONGODB_NAME = os.getenv("MONGODB_NAME")
+MONGODB_URL = os.getenv("MONGODB_URL")
+DATABASE_NAME = os.getenv("DATABASE_NAME")
 
-client = AsyncIOMotorClient(MONGODB_URI)
+print("Mongo URL:", MONGODB_URL)
 
-database = client[MONGODB_NAME]
+client = AsyncIOMotorClient(MONGODB_URL)
 
-parking_collection = database["parking_data"]
+db = client[DATABASE_NAME]
+
+parking_collection = db["parking"]
+
+print("MongoDB Atlas Connected")
