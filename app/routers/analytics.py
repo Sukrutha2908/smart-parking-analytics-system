@@ -1,40 +1,39 @@
 from fastapi import APIRouter
-from app.mongodb import parking_collection
 
-router = APIRouter()
+router = APIRouter(
+prefix="/analytics",
+tags=["Analytics"]
+)
 
-# Total vehicles
-@router.get("/total-vehicles")
-async def total_vehicles():
+# Parking Occupancy
 
-    count = await parking_collection.count_documents({})
-
+@router.get("/occupancy")
+def parking_occupancy():
     return {
-        "total_vehicles": count
+    "occupancy_rate": "85%"
+}
+
+# Revenue Analytics
+
+@router.get("/revenue")
+def revenue():
+    return {
+    "total_revenue": 25000
+}
+
+# Peak Hour Analytics
+
+@router.get("/peak-hours")
+def peak_hours():
+    return {
+    "peak_hours": "6 PM - 9 PM"
     }
 
-# Occupied slots
-@router.get("/occupied-slots")
-async def occupied_slots():
+# Vehicle Count Analytics
 
-    count = await parking_collection.count_documents(
-        {"status": "Occupied"}
-    )
+@router.get("/vehicle-count")
+def vehicle_count():
 
     return {
-        "occupied_slots": count
-    }
-
-# Total revenue
-@router.get("/total-revenue")
-async def total_revenue():
-
-    revenue = 0
-
-    async for document in parking_collection.find():
-
-        revenue += document.get("billing_amount", 0)
-
-    return {
-        "total_revenue": revenue
+        "vehicles_today": 320
     }
