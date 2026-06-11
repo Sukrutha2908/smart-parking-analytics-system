@@ -9,6 +9,7 @@ class CompleteParkingModel(BaseModel):
     vehicle_type: str
     owner_name: str
     owner_phone: str
+    
     # Slot Details
     slot_id: int
     slot_number: int
