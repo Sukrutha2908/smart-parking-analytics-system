@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Parking — Slot Management System</title>
+  <link rel="stylesheet" href="/frontend/script.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <span class="brand-icon">🅿</span>
+    <div>
+      <div class="brand-name">Smart Parking</div>
+      <div class="brand-sub">Slot Management System</div>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-item active" data-view="dashboard">⊞&nbsp; Dashboard</button>
+    <button class="nav-item" data-view="entry">↓&nbsp; Vehicle Entry</button>
+    <button class="nav-item" data-view="exit">↑&nbsp; Exit &amp; Billing</button>
+    <button class="nav-item" data-view="logs">☰&nbsp; Parking Logs</button>
+  </nav>
+  <div class="sidebar-footer">Rate: ₹20 / hour &nbsp;|&nbsp; 500 slots</div>
+</aside>
+
+<main class="main">
+  <div id="alertBox" class="alert hidden"></div>
+  <div id="apiBanner" class="api-banner hidden">
+    ⚠ Cannot reach FastAPI at <strong>http://127.0.0.1:8000</strong>. Run <code>uvicorn app.main:app --reload</code>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total Slots</div><div class="stat-value" id="statTotal">500</div></div>
+    <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value green" id="statFree">—</div></div>
+    <div class="stat-card"><div class="stat-label">Occupied</div><div class="stat-value red" id="statOcc">—</div></div>
+    <div class="stat-card"><div class="stat-label">Occupancy</div><div class="stat-value blue" id="statPct">—</div></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <section id="view-dashboard" class="view active">
+    <div class="view-header">
+      <h2>Slot Overview</h2>
+      <div class="legend"><span class="dot free"></span> Free &nbsp;<span class="dot occ"></span> Occupied</div>
+      <div class="filter-row">
+        <select id="filterStatus" onchange="renderSlots()">
+          <option value="all">All slots</option>
+          <option value="free">Free only</option>
+          <option value="occupied">Occupied only</option>
+        </select>
+        <input type="text" id="filterSlot" placeholder="Jump to slot #" style="width:130px" oninput="renderSlots()" />
+        <button class="btn small" onclick="loadDashboard()">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="slot-grid" id="slotGrid"><p style="color:var(--muted);padding:1rem">Loading slots…</p></div>
+    <div class="pagination" id="dashPagination"></div>
+  </section>
+
+  <!-- ENTRY -->
+  <section id="view-entry" class="view">
+    <div class="view-header"><h2>Register Vehicle Entry</h2></div>
+    <div class="card" style="max-width:480px">
+      <div class="form-row">
+        <label for="vehicleNum">Vehicle Number</label>
+        <input id="vehicleNum" type="text" placeholder="e.g. AP39AB1234" maxlength="15"
+               onkeydown="if(event.key==='Enter') registerEntry()" />
+      </div>
+      <button class="btn primary" onclick="registerEntry()">↓ Register Entry</button>
+      <div id="entryResult" class="hidden"></div>
+    </div>
+  </section>
+
+  <!-- EXIT -->
+  <section id="view-exit" class="view">
+    <div class="view-header"><h2>Process Exit &amp; Billing</h2></div>
+    <div class="card" style="max-width:480px">
+      <div class="form-row">
+        <label for="exitVehicleNum">Vehicle Number</label>
+        <input id="exitVehicleNum" type="text" placeholder="e.g. AP39AB1234" maxlength="15"
+               onkeydown="if(event.key==='Enter') processExit()" />
+      </div>
+      <button class="btn danger" onclick="processExit()">↑ Process Exit</button>
+      <div id="billCard" class="bill-card hidden"></div>
+    </div>
+  </section>
+
+  <!-- LOGS -->
+  <section id="view-logs" class="view">
+    <div class="view-header">
+      <h2>Parking Logs</h2>
+      <div class="filter-row">
+        <select id="logStatus" onchange="loadLogs(1)">
+          <option value="">All records</option>
+          <option value="active">Currently parked</option>
+          <option value="completed">Completed</option>
+        </select>
+        <button class="btn danger small" onclick="cleanupLogs()">🗑 Clear Completed</button>
+        <button class="btn danger small" onclick="resetAll()">⚠ Reset All</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Vehicle</th><th>Slot</th><th>Entry Time</th>
+            <th>Exit Time</th><th>Duration</th><th>Fee</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="logsBody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="logPagination"></div>
+  </section>
+</main>
+
+<script src="/frontend/script.js"></script>
+</body>
+</html>
