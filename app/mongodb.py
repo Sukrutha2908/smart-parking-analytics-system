@@ -24,4 +24,10 @@ db = client[DATABASE_NAME]
 
 parking_collection = db["parking"]
 
+slots_collection = db["slots"]
+
+billing_collection = db["billing"]
+
+transaction_collection = db["transactions"]
+
 print("MongoDB Connected Successfully")

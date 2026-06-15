@@ -1,71 +1,7 @@
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-
-# Routers
-
-from app.routers import parking
-from app.routers import vehicle
-from app.routers import slots
-from app.routers import billing
-from app.routers import transaction
-from app.routers import analytics
-
-# FastAPI App
-
-app = FastAPI(
-title="Smart Parking Analytics System",
-version="1.0.0",
-description="Real-Time Smart Parking Management System"
-)
-
-# Static Files
-
-app.mount(
-"/static",
-StaticFiles(directory="app/static"),
-name="static"
-)
-
-# Include Routers
-
-app.include_router(parking.router)
-app.include_router(vehicle.router)
-app.include_router(slots.router)
-app.include_router(billing.router)
-app.include_router(transaction.router)
-app.include_router(analytics.router)
-
-# Home API
-
-@app.get("/")
-def home():
-    return {
-        "message": "Smart Parking API Running 🚗"
-    }
-
-@app.get("/favicon.ico")
-def favicon():
-    return FileResponse("app/static/favicon.ico")
-
-# Health Check API
-
-@app.get("/health")
-def health():
-    return {
-    "status": "healthy"
-    }
-# Favicon
-
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    return FileResponse("app/static/favicon.ico")
-
-
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from pymongo import MongoClient
 from pydantic import BaseModel
@@ -76,13 +12,28 @@ from uuid import uuid4
 import os
 
 # ─────────────────────────────────────────────
+# Import Routers
+# ─────────────────────────────────────────────
+
+from app.routers import parking
+from app.routers import vehicle
+from app.routers import slots
+from app.routers import billing
+from app.routers import transaction
+from app.routers import analytics
+
+# ─────────────────────────────────────────────
 # FastAPI App
 # ─────────────────────────────────────────────
 
-app = FastAPI(title="Smart Parking Analytics System")
+app = FastAPI(
+    title="Smart Parking Analytics System",
+    version="1.0.0",
+    description="Real-Time Smart Parking Management System"
+)
 
 # ─────────────────────────────────────────────
-# CORS
+# CORS Middleware
 # ─────────────────────────────────────────────
 
 app.add_middleware(
@@ -94,7 +45,7 @@ app.add_middleware(
 )
 
 # ─────────────────────────────────────────────
-# Static Frontend Files
+# Static Files
 # ─────────────────────────────────────────────
 
 app.mount(
@@ -108,6 +59,17 @@ app.mount(
     StaticFiles(directory="app/static"),
     name="static"
 )
+
+# ─────────────────────────────────────────────
+# Include Routers
+# ─────────────────────────────────────────────
+
+app.include_router(parking.router)
+app.include_router(vehicle.router)
+app.include_router(slots.router)
+app.include_router(billing.router)
+app.include_router(transaction.router)
+app.include_router(analytics.router)
 
 # ─────────────────────────────────────────────
 # MongoDB Connection
@@ -135,29 +97,48 @@ print("MongoDB Connected Successfully")
 # Constants
 # ─────────────────────────────────────────────
 
-TOTAL_SLOTS = 500
+FLOORS = ["B1", "B2", "L1", "L2", "L3"]
+
+SLOTS_PER_FLOOR = 100
+
 RATE_PER_HOUR = 20
 
 # ─────────────────────────────────────────────
-# Initialize Slots
+# Initialize Multi-Layer Slots
 # ─────────────────────────────────────────────
 
 def initialize_slots():
 
-    existing = slots_col.count_documents({})
+    try:
 
-    if existing == 0:
+        existing = slots_col.count_documents({})
 
-        slots = []
+        if existing == 0:
 
-        for i in range(1, TOTAL_SLOTS + 1):
+            slots_data = []
 
-            slots.append({
-                "slot_number": i,
-                "status": "free"
-            })
+            for floor in FLOORS:
 
-        slots_col.insert_many(slots)
+                for i in range(1, SLOTS_PER_FLOOR + 1):
+
+                    slots_data.append({
+
+                        "floor": floor,
+
+                        "slot_number": i,
+
+                        "slot_id": f"{floor}-{i}",
+
+                        "status": "free"
+                    })
+
+            slots_col.insert_many(slots_data)
+
+            print("Multi-Layer Slots Initialized Successfully")
+
+    except Exception as e:
+
+        print(f"Slot Initialization Error: {str(e)}")
 
 initialize_slots()
 
@@ -169,7 +150,7 @@ class VehicleIn(BaseModel):
     vehicle_number: str
 
 # ─────────────────────────────────────────────
-# Serve Frontend
+# Home API
 # ─────────────────────────────────────────────
 
 @app.get("/")
@@ -177,22 +158,22 @@ def home():
     return FileResponse("frontend/index.html")
 
 # ─────────────────────────────────────────────
-# Get Slots
+# Favicon API
 # ─────────────────────────────────────────────
 
-@app.get("/slots")
-def get_slots():
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("app/static/favicon.ico")
 
-    slots = list(
-        slots_col.find(
-            {},
-            {
-                "_id": 0
-            }
-        )
-    )
+# ─────────────────────────────────────────────
+# Health Check API
+# ─────────────────────────────────────────────
 
-    return slots
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy"
+    }
 
 # ─────────────────────────────────────────────
 # Slot Summary
@@ -201,19 +182,30 @@ def get_slots():
 @app.get("/slots/summary")
 def slots_summary():
 
-    free = slots_col.count_documents({
-        "status": "free"
-    })
+    try:
 
-    occupied = slots_col.count_documents({
-        "status": "occupied"
-    })
+        free = slots_col.count_documents({
+            "status": "free"
+        })
 
-    return {
-        "total": TOTAL_SLOTS,
-        "free": free,
-        "occupied": occupied
-    }
+        occupied = slots_col.count_documents({
+            "status": "occupied"
+        })
+
+        total = len(FLOORS) * SLOTS_PER_FLOOR
+
+        return {
+            "total": total,
+            "free": free,
+            "occupied": occupied
+        }
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Summary Error: {str(e)}"
+        )
 
 # ─────────────────────────────────────────────
 # Vehicle Entry
@@ -222,45 +214,71 @@ def slots_summary():
 @app.post("/entry")
 def vehicle_entry(body: VehicleIn):
 
-    vehicle_number = body.vehicle_number.strip().upper()
+    try:
 
-    existing = logs_col.find_one({
-        "vehicle_number": vehicle_number,
-        "exit_time": None
-    })
+        vehicle_number = body.vehicle_number.strip().upper()
 
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail="Vehicle already parked."
+        existing = logs_col.find_one({
+            "vehicle_number": vehicle_number,
+            "exit_time": None
+        })
+
+        if existing:
+
+            raise HTTPException(
+                status_code=409,
+                detail="Vehicle already parked."
+            )
+
+        slot = slots_col.find_one_and_update(
+            {"status": "free"},
+            {"$set": {"status": "occupied"}}
         )
 
-    slot = slots_col.find_one_and_update(
-        {"status": "free"},
-        {"$set": {"status": "occupied"}}
-    )
+        if not slot:
 
-    if not slot:
+            raise HTTPException(
+                status_code=400,
+                detail="No free slots available."
+            )
+
+        entry_time = datetime.utcnow()
+
+        logs_col.insert_one({
+
+            "vehicle_number": vehicle_number,
+
+            "slot_id": slot["slot_id"],
+
+            "floor": slot["floor"],
+
+            "entry_time": entry_time,
+
+            "exit_time": None,
+
+            "fee": None
+        })
+
+        return {
+
+            "message": "Vehicle parked successfully",
+
+            "slot_id": slot["slot_id"],
+
+            "floor": slot["floor"],
+
+            "entry_time": entry_time
+        }
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+
         raise HTTPException(
-            status_code=400,
-            detail="No free slots available."
+            status_code=500,
+            detail=f"Vehicle Entry Error: {str(e)}"
         )
-
-    entry_time = datetime.utcnow()
-
-    logs_col.insert_one({
-        "vehicle_number": vehicle_number,
-        "slot_number": slot["slot_number"],
-        "entry_time": entry_time,
-        "exit_time": None,
-        "fee": None
-    })
-
-    return {
-        "message": "Vehicle parked successfully",
-        "slot_number": slot["slot_number"],
-        "entry_time": entry_time
-    }
 
 # ─────────────────────────────────────────────
 # Vehicle Exit
@@ -269,185 +287,178 @@ def vehicle_entry(body: VehicleIn):
 @app.post("/exit")
 def vehicle_exit(body: VehicleIn):
 
-    vehicle_number = body.vehicle_number.strip().upper()
+    try:
 
-    log = logs_col.find_one({
-        "vehicle_number": vehicle_number,
-        "exit_time": None
-    })
+        vehicle_number = body.vehicle_number.strip().upper()
 
-    if not log:
-        raise HTTPException(
-            status_code=404,
-            detail="Vehicle not found."
+        log = logs_col.find_one({
+            "vehicle_number": vehicle_number,
+            "exit_time": None
+        })
+
+        if not log:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Vehicle not found."
+            )
+
+        exit_time = datetime.utcnow()
+
+        duration_seconds = (
+            exit_time - log["entry_time"]
+        ).total_seconds()
+
+        hours = max(duration_seconds / 3600, 0.25)
+
+        fee = round(hours * RATE_PER_HOUR, 2)
+
+        logs_col.update_one(
+            {"_id": log["_id"]},
+            {
+                "$set": {
+                    "exit_time": exit_time,
+                    "fee": fee
+                }
+            }
         )
 
-    exit_time = datetime.utcnow()
-
-    duration_seconds = (
-        exit_time - log["entry_time"]
-    ).total_seconds()
-
-    hours = max(duration_seconds / 3600, 0.25)
-
-    fee = round(hours * RATE_PER_HOUR, 2)
-
-    # Update Parking Log
-
-    logs_col.update_one(
-        {"_id": log["_id"]},
-        {
-            "$set": {
-                "exit_time": exit_time,
-                "fee": fee
+        slots_col.update_one(
+            {
+                "slot_id": log["slot_id"]
+            },
+            {
+                "$set": {
+                    "status": "free"
+                }
             }
+        )
+
+        billing_id = str(uuid4())
+
+        billing_data = {
+
+            "billing_id": billing_id,
+
+            "vehicle_number": vehicle_number,
+
+            "slot_id": log["slot_id"],
+
+            "floor": log["floor"],
+
+            "entry_time": log["entry_time"],
+
+            "exit_time": exit_time,
+
+            "duration_hours": round(hours, 2),
+
+            "rate_per_hour": RATE_PER_HOUR,
+
+            "total_fee": fee,
+
+            "created_at": datetime.utcnow()
         }
-    )
 
-    # Free Slot
+        billing_col.insert_one(billing_data)
 
-    slots_col.update_one(
-        {
-            "slot_number": log["slot_number"]
-        },
-        {
-            "$set": {
-                "status": "free"
-            }
+        transaction_data = {
+
+            "transaction_id": str(uuid4()),
+
+            "billing_id": billing_id,
+
+            "vehicle_number": vehicle_number,
+
+            "amount": fee,
+
+            "payment_status": "paid",
+
+            "payment_method": "cash",
+
+            "transaction_time": datetime.utcnow()
         }
-    )
 
-    # ─────────────────────────────────────────
-    # Billing Record
-    # ─────────────────────────────────────────
+        transaction_col.insert_one(transaction_data)
 
-    billing_id = str(uuid4())
+        return {
 
-    billing_data = {
+            "message": "Vehicle exited successfully",
 
-        "billing_id": billing_id,
+            "vehicle_number": vehicle_number,
 
-        "vehicle_number": vehicle_number,
+            "slot_id": log["slot_id"],
 
-        "slot_number": log["slot_number"],
+            "floor": log["floor"],
 
-        "entry_time": log["entry_time"],
+            "entry_time": log["entry_time"].isoformat(),
 
-        "exit_time": exit_time,
+            "exit_time": exit_time.isoformat(),
 
-        "duration_hours": round(hours, 2),
+            "duration_minutes": round(hours * 60),
 
-        "rate_per_hour": RATE_PER_HOUR,
+            "rate_per_hour": RATE_PER_HOUR,
 
-        "total_fee": fee,
+            "fee": fee,
 
-        "created_at": datetime.utcnow()
-    }
+            "billing_id": billing_id
+        }
 
-    billing_col.insert_one(billing_data)
+    except HTTPException as e:
+        raise e
 
-    # ─────────────────────────────────────────
-    # Transaction Record
-    # ─────────────────────────────────────────
+    except Exception as e:
 
-    transaction_data = {
-
-        "transaction_id": str(uuid4()),
-
-        "billing_id": billing_id,
-
-        "vehicle_number": vehicle_number,
-
-        "amount": fee,
-
-        "payment_status": "paid",
-
-        "payment_method": "cash",
-
-        "transaction_time": datetime.utcnow()
-    }
-
-    transaction_col.insert_one(transaction_data)
-
-    return {
-        
-        "message": "Vehicle exited successfully",
-        
-        "vehicle_number": vehicle_number,
-        
-        "slot_number": log["slot_number"],
-        
-        "entry_time": log["entry_time"].isoformat(),
-        
-        "exit_time": exit_time.isoformat(),
-        
-        "duration": round(hours * 60),
-        
-        "rate_per_hour": RATE_PER_HOUR,
-        
-        "fee": fee,
-        
-        "billing_id": billing_id
-        
-    }
+        raise HTTPException(
+            status_code=500,
+            detail=f"Vehicle Exit Error: {str(e)}"
+        )
 
 # ─────────────────────────────────────────────
 # Parking Logs
 # ─────────────────────────────────────────────
 
 @app.get("/logs")
-def get_logs(
-    page: int = 1,
-    limit: int = 50,
-    status: str = None
-):
+def get_logs():
 
-    query = {}
+    try:
 
-    if status == "active":
-        query["exit_time"] = None
+        docs = logs_col.find().sort("entry_time", -1)
 
-    elif status == "completed":
-        query["exit_time"] = {
-            "$ne": None
-        }
+        results = []
 
-    total = logs_col.count_documents(query)
+        for d in docs:
 
-    docs = (
-        logs_col.find(query)
-        .sort("entry_time", -1)
-        .skip((page - 1) * limit)
-        .limit(limit)
-    )
+            results.append({
 
-    results = []
+                "vehicle_number": d["vehicle_number"],
 
-    for d in docs:
-        
-        results.append({
-            "vehicle_number": d["vehicle_number"],
-            "slot_number": d["slot_number"],
-            "entry_time": (
-                d["entry_time"].isoformat()
-                if d.get("entry_time")
-                else None
+                "slot_id": d["slot_id"],
+
+                "floor": d["floor"],
+
+                "entry_time": (
+                    d["entry_time"].isoformat()
+                    if d.get("entry_time")
+                    else None
                 ),
-                
-            "exit_time": (
-                d["exit_time"].isoformat()
-                if d.get("exit_time")
-                else None
+
+                "exit_time": (
+                    d["exit_time"].isoformat()
+                    if d.get("exit_time")
+                    else None
                 ),
+
                 "fee": d.get("fee")
-        })
+            })
 
-    return {
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "logs": results
-    }
+        return results
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Logs Error: {str(e)}"
+        )
 
 # ─────────────────────────────────────────────
 # Cleanup Logs
@@ -456,13 +467,22 @@ def get_logs(
 @app.delete("/logs/cleanup")
 def cleanup_logs():
 
-    result = logs_col.delete_many({
-        "exit_time": {"$ne": None}
-    })
+    try:
 
-    return {
-        "deleted": result.deleted_count
-    }
+        result = logs_col.delete_many({
+            "exit_time": {"$ne": None}
+        })
+
+        return {
+            "deleted": result.deleted_count
+        }
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Cleanup Error: {str(e)}"
+        )
 
 # ─────────────────────────────────────────────
 # Reset System
@@ -471,28 +491,27 @@ def cleanup_logs():
 @app.post("/reset")
 def reset_system():
 
-    slots_col.update_many(
-        {},
-        {
-            "$set": {
-                "status": "free"
+    try:
+
+        slots_col.update_many(
+            {},
+            {
+                "$set": {
+                    "status": "free"
+                }
             }
+        )
+
+        logs_col.delete_many({})
+        vehicles_col.delete_many({})
+
+        return {
+            "message": "System reset successful"
         }
-    )
 
-    logs_col.delete_many({})
-    vehicles_col.delete_many({})
+    except Exception as e:
 
-    return {
-        "message": "System reset successful"
-    }
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Reset Error: {str(e)}"
+        )

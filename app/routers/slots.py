@@ -1,29 +1,51 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.models.slot_model import SlotModel
 
 router = APIRouter(
-prefix="/slots",
-tags=["Slots"]
+    prefix="/slots",
+    tags=["Slots"]
 )
-
-# Create Slot
 
 @router.post("/")
 def create_slot(slot: SlotModel):
 
-    return {
-        "message": "Slot Created Successfully",
-        "data": slot
-    }
+    try:
 
-# Get All Slots
+        slot_dict = slot.dict()
+
+        return {
+            "message": "Slot Created Successfully",
+            "data": slot_dict
+        }
+
+    except HTTPException as e:
+        raise e
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 @router.get("/")
 def get_slots():
-    return {
-    "message": "All Parking Slots"
-}
 
+    try:
 
+        slots = list(
+            slots_collection.find(
+                {},
+                {"_id": 0}
+            )
+        )
 
+        return slots
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
