@@ -44,6 +44,10 @@ def home():
         "message": "Smart Parking API Running 🚗"
     }
 
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse("app/static/favicon.ico")
+
 # Health Check API
 
 @app.get("/health")
@@ -97,6 +101,12 @@ app.mount(
     "/frontend",
     StaticFiles(directory="frontend"),
     name="frontend"
+)
+
+app.mount(
+    "/static",
+    StaticFiles(directory="app/static"),
+    name="static"
 )
 
 # ─────────────────────────────────────────────
@@ -360,16 +370,25 @@ def vehicle_exit(body: VehicleIn):
     transaction_col.insert_one(transaction_data)
 
     return {
-
+        
         "message": "Vehicle exited successfully",
-
+        
         "vehicle_number": vehicle_number,
-
+        
         "slot_number": log["slot_number"],
-
+        
+        "entry_time": log["entry_time"].isoformat(),
+        
+        "exit_time": exit_time.isoformat(),
+        
+        "duration": round(hours * 60),
+        
+        "rate_per_hour": RATE_PER_HOUR,
+        
         "fee": fee,
-
+        
         "billing_id": billing_id
+        
     }
 
 # ─────────────────────────────────────────────
@@ -405,7 +424,7 @@ def get_logs(
     results = []
 
     for d in docs:
-
+        
         results.append({
             "vehicle_number": d["vehicle_number"],
             "slot_number": d["slot_number"],
@@ -413,13 +432,14 @@ def get_logs(
                 d["entry_time"].isoformat()
                 if d.get("entry_time")
                 else None
-            ),
+                ),
+                
             "exit_time": (
                 d["exit_time"].isoformat()
                 if d.get("exit_time")
                 else None
-            ),
-            "fee": d.get("fee")
+                ),
+                "fee": d.get("fee")
         })
 
     return {
