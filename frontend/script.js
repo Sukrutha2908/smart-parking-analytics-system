@@ -144,14 +144,55 @@ async function processExit() {
 
   bill.classList.remove('hidden');
   bill.innerHTML = `
-    <h3>Billing Summary</h3>
-    <div class="bill-row"><span>Vehicle</span><span>${data.vehicle_number}</span></div>
-    <div class="bill-row"><span>Slot</span><span>P${String(data.slot_number).padStart(3,'0')}</span></div>
-    <div class="bill-row"><span>Entry</span><span>${formatTime(data.entry_time)}</span></div>
-    <div class="bill-row"><span>Exit</span><span>${formatTime(data.exit_time)}</span></div>
-    <div class="bill-row"><span>Duration</span><span>${data.duration}</span></div>
-    <div class="bill-row"><span>Rate</span><span>₹20 / hr</span></div>
-    <div class="bill-row"><span>Total Fee</span><span>₹${data.fee}</span></div>`;
+    <h3 class="bill-title">Billing Summary</h3>
+
+    <div class="bill-grid">
+
+      <div class="bill-row">
+        <span class="bill-label">Vehicle</span>
+        <span class="bill-value">${data.vehicle_number}</span>
+      </div>
+    
+      <div class="bill-row">
+        <span class="bill-label">Slot</span>
+        <span class="bill-value">
+          P${String(data.slot_number).padStart(3,'0')}
+        </span>
+      </div>
+
+      <div class="bill-row">
+        <span class="bill-label">Entry</span>
+        <span class="bill-value">${data.entry_time ? formatTime(data.entry_time) : '--'}</span>
+      </div>
+
+      <div class="bill-row">
+        <span class="bill-label">Exit</span>
+        <span class="bill-value">${data.exit_time ? formatTime(data.exit_time) : '--'}</span>
+      </div>
+
+      <div class="bill-row">
+        <span class="bill-label">Total Time</span>
+
+        <span class="bill-value">
+          ${
+            data.duration < 60
+            ? `${data.duration} Minutes`
+            : `${Math.floor(data.duration / 60)}h ${data.duration % 60}m`
+          }
+        </span>
+      </div>
+
+      <div class="bill-row">
+        <span class="bill-label">Rate</span>
+        <span class="bill-value">₹20 / hr</span>
+      </div>
+      
+      <div class="bill-row">
+        <span class="bill-label">Total Fee</span>
+        <span class="bill-value">₹${data.fee}</span>
+      </div>
+    </div>
+  `;
 }
 
 // ── Logs ──────────────────────────────────────────────────────────────────────
@@ -169,7 +210,7 @@ async function loadLogs(page) {
   }
 
   tbody.innerHTML = data.logs.map(l => {
-    const dur = l.exit_time && l.entry_time ? calcDur(l.entry_time, l.exit_time) : '—';
+    const dur = l.duration ? l.duration + 'm' : '—';
     return `<tr>
       <td><strong>${l.vehicle_number}</strong></td>
       <td>P${String(l.slot_number).padStart(3,'0')}</td>

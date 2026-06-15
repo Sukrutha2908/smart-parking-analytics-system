@@ -354,3 +354,62 @@ td {
   background: var(--blue-light);
   color: var(--blue-dark);
 }
+
+#billBox {
+  background: white;
+
+  border-radius: 12px;
+
+  padding: 20px;
+
+  width: 340px;
+
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+
+  border: 1px solid #e5e5e5;
+}
+
+.bill-title {
+  margin-bottom: 1rem;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.bill-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px 14px;
+
+  background: #f8f8f8;
+
+  border-radius: 8px;
+}
+
+.bill-label {
+  font-weight: 600;
+  color: #555;
+}
+
+.bill-value {
+  font-weight: 500;
+  color: #111;
+}
+
+.bill-row.total {
+  background: #E1F5EE;
+  border: 1px solid #1D9E75;
+}
+
+.bill-row.total .bill-value {
+  color: #1D9E75;
+  font-size: 18px;
+  font-weight: 700;
+}
