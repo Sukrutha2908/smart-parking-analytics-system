@@ -24,3 +24,6 @@ def get_slots():
     return {
     "message": "All Parking Slots"
 }
+
+
+
