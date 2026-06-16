@@ -1,35 +1,50 @@
 'use strict';
 
+/* ─────────────────────────────────────────────
+   API
+───────────────────────────────────────────── */
+
 const API_BASE = '';
 
 let allSlots = [];
+
 let dashPage = 1;
+
 const PER_PAGE = 200;
 
-// ── Navigation ────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Navigation
+───────────────────────────────────────────── */
 
 document.querySelectorAll('.nav-item').forEach(btn => {
 
   btn.addEventListener('click', () => {
 
-    document.querySelectorAll('.nav-item')
+    document
+      .querySelectorAll('.nav-item')
       .forEach(b => b.classList.remove('active'));
 
-    document.querySelectorAll('.view')
+    document
+      .querySelectorAll('.view')
       .forEach(v => v.classList.remove('active'));
 
     btn.classList.add('active');
 
     const view = btn.dataset.view;
 
-    document.getElementById('view-' + view)
+    document
+      .getElementById('view-' + view)
       .classList.add('active');
 
     clearAlert();
 
     if (view === 'dashboard') {
 
-      dashPage = 1;
+      loadSummary();
+    }
+
+    if (view === 'slots') {
+
       loadDashboard();
     }
 
@@ -40,44 +55,55 @@ document.querySelectorAll('.nav-item').forEach(btn => {
   });
 });
 
-// ── Alert ─────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Alerts
+───────────────────────────────────────────── */
 
-function showAlert(msg, type) {
+function showAlert(msg, type = 'success') {
 
-  const box = document.getElementById('alertBox');
+  const box =
+    document.getElementById('alertBox');
 
   box.textContent = msg;
 
-  box.className = 'alert ' + type;
+  box.className = `alert ${type}`;
 
-  setTimeout(() => clearAlert(), 5000);
+  box.classList.remove('hidden');
+
+  setTimeout(() => {
+
+    clearAlert();
+
+  }, 4000);
 }
 
 function clearAlert() {
 
-  document.getElementById('alertBox')
+  document
+    .getElementById('alertBox')
     .className = 'alert hidden';
 }
 
-// ── API Helper ────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   API Helper
+───────────────────────────────────────────── */
 
 async function api(path, options = {}) {
 
   try {
 
-    const res = await fetch(API_BASE + path, {
+    const res = await fetch(
+      API_BASE + path,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
 
-      headers: {
-        'Content-Type': 'application/json'
-      },
-
-      ...options
-    });
+        ...options
+      }
+    );
 
     const data = await res.json();
-
-    document.getElementById('apiBanner')
-      .classList.add('hidden');
 
     return {
       ok: res.ok,
@@ -85,40 +111,54 @@ async function api(path, options = {}) {
       data
     };
 
-  } catch (e) {
+  } catch (err) {
 
-    document.getElementById('apiBanner')
-      .classList.remove('hidden');
+    showAlert(
+      'Cannot connect to backend',
+      'error'
+    );
 
     return {
       ok: false,
-      status: 0,
-      data: {
-        detail: 'Cannot reach server.'
-      }
+      status: 500,
+      data: null
     };
   }
 }
 
-// ── Dashboard Summary ─────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Dashboard Summary
+───────────────────────────────────────────── */
 
 async function loadSummary() {
 
-  const { ok, data } = await api('/slots/summary');
+  const { ok, data } =
+    await api('/slots/summary');
 
   if (!ok) return;
 
-  document.getElementById('statTotal').textContent = data.total;
+  document.getElementById('statTotal').textContent =
+    data.total || 0;
 
-  document.getElementById('statFree').textContent = data.free;
+  document.getElementById('statFree').textContent =
+    data.free || 0;
 
-  document.getElementById('statOcc').textContent = data.occupied;
+  document.getElementById('statOcc').textContent =
+    data.occupied || 0;
+
+  const pct =
+    (
+      (data.occupied || 0) /
+      (data.total || 1)
+    ) * 100;
 
   document.getElementById('statPct').textContent =
-    ((data.occupied / data.total) * 100).toFixed(1) + '%';
+    pct.toFixed(1) + '%';
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Load Dashboard
+───────────────────────────────────────────── */
 
 async function loadDashboard() {
 
@@ -126,32 +166,64 @@ async function loadDashboard() {
 
   const { ok, data } = await api('/slots');
 
-  if (!ok) return;
+  console.log(data);
+
+  if (!ok) {
+
+    showAlert(
+      'Failed to load slots',
+      'error'
+    );
+
+    return;
+  }
 
   allSlots = data;
 
   renderSlots();
 }
+/* ─────────────────────────────────────────────
+   Render Slots
+───────────────────────────────────────────── */
 
 function renderSlots() {
 
-  const sf = document.getElementById('filterStatus').value;
+  const sf =
+    document.getElementById('filterStatus').value;
 
-  const nf = (
-    document.getElementById('filterSlot').value || ''
-  ).trim().toUpperCase();
+  const nf =
+    (
+      document
+        .getElementById('filterSlot')
+        .value || ''
+    )
+    .trim();
 
   let list = allSlots;
 
+  const floor =
+  document.getElementById('floorFilter').value;
+  
+  if (floor) {
+    list = list.filter(
+      s => s.floor === floor
+    );
+  }
+
   if (sf !== 'all') {
 
-    list = list.filter(s => s.status === sf);
+    list = list.filter(
+      s => s.status === sf
+    );
   }
 
   if (nf) {
 
-    list = list.filter(s =>
-      s.slot_id.startsWith(nf)
+    list = list.filter(
+      s =>
+        s.slot_id.toLowerCase().includes(
+          nf.toLowerCase()
+        )
     );
   }
 
@@ -170,168 +242,147 @@ function renderSlots() {
     dashPage * PER_PAGE
   );
 
-  document.getElementById('slotGrid').innerHTML = paged.length
+  document.getElementById('slotGrid').innerHTML =
 
-    ? paged.map(s => `
+    paged.length
 
-      <div class="slot ${s.status}"
+      ? paged.map(s => `
 
-        onclick="${
-          s.status === 'free'
-            ? `quickPark('${s.slot_id}')`
-            : ''
-        }">
+        <div class="slot ${s.status}">
 
-        <div class="slot-num">
-          ${s.slot_id}
+          <div class="slot-num">
+            ${s.slot_id}
+          </div>
+
+          <div class="slot-status">
+            ${
+              s.status
+                ? s.status.charAt(0).toUpperCase() +
+                  s.status.slice(1)
+                : 'Unknown'
+            }
+          </div>
+
         </div>
 
-        <div class="slot-floor">
-          ${s.floor}
-        </div>
+      `).join('')
 
-        <div class="slot-status">
-          ${s.status.charAt(0).toUpperCase() + s.status.slice(1)}
-        </div>
-
-      </div>
-
-    `).join('')
-
-    : `
-      <p style="color:var(--muted);padding:1rem">
-        No slots match.
-      </p>
-    `;
+      : `
+        <p style="
+          color:var(--muted);
+          padding:1rem
+        ">
+          No slots found.
+        </p>
+      `;
 
   buildPagination(
     'dashPagination',
     pages,
     dashPage,
     p => {
+
       dashPage = p;
+
       renderSlots();
     }
   );
 }
 
-// ── Quick Park ────────────────────────────────────────────────────────────────
-
-async function quickPark(slotId) {
-
-  const veh = prompt(
-    `Park in slot ${slotId} — enter vehicle number:`
-  );
-
-  if (!veh || !veh.trim()) return;
-
-  const { ok, data } = await api('/entry', {
-
-    method: 'POST',
-
-    body: JSON.stringify({
-      vehicle_number: veh.trim().toUpperCase()
-    })
-  });
-
-  showAlert(
-    ok ? data.message : (data.detail || 'Error'),
-    ok ? 'success' : 'error'
-  );
-
-  if (ok) {
-
-    loadDashboard();
-  }
-}
-
-// ── Vehicle Entry ─────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Register Entry
+───────────────────────────────────────────── */
 
 async function registerEntry() {
 
-  const num = document.getElementById('vehicleNum')
-    .value
-    .trim()
-    .toUpperCase();
+  const num =
+    document.getElementById('vehicleNum')
+      .value
+      .trim()
+      .toUpperCase();
 
-  const box = document.getElementById('entryResult');
+  const vehicle_type =
+    document.getElementById('vehicleType')
+      .value;
 
-  if (!num) {
-
-    showResult(
-      box,
-      'Enter a vehicle number.',
-      false
-    );
-
-    return;
-  }
-
-  const { ok, data } = await api('/entry', {
-
-    method: 'POST',
-
-    body: JSON.stringify({
-      vehicle_number: num
-    })
-  });
-
-  showResult(
-
-    box,
-
-    ok
-      ? `✅ ${data.message} | Slot: ${data.slot_id} (${data.floor})`
-      : `❌ ${data.detail || 'Error'}`,
-
-    ok
-  );
-
-  if (ok) {
-
-    document.getElementById('vehicleNum').value = '';
-
-    loadSummary();
-  }
-}
-
-function showResult(box, msg, ok) {
-
-  box.className =
-    'result-box ' + (ok ? 'success' : 'error');
-
-  box.textContent = msg;
-}
-
-// ── Vehicle Exit ──────────────────────────────────────────────────────────────
-
-async function processExit() {
-
-  const num = document.getElementById('exitVehicleNum')
-    .value
-    .trim()
-    .toUpperCase();
-
-  const bill = document.getElementById('billCard');
-
-  if (!num) {
+  if (!num || !vehicle_type) {
 
     showAlert(
-      'Enter a vehicle number.',
+      'Enter vehicle number and select vehicle type.',
       'error'
     );
 
     return;
   }
 
-  const { ok, data } = await api('/exit', {
+  const { ok, data } =
+    await api('/entry', {
 
-    method: 'POST',
+      method: 'POST',
 
-    body: JSON.stringify({
-      vehicle_number: num
-    })
-  });
+      body: JSON.stringify({
+
+        vehicle_number: num,
+
+        vehicle_type
+      })
+    });
+
+  if (!ok) {
+
+    showAlert(
+      data.detail || 'Error',
+      'error'
+    );
+
+    return;
+  }
+
+  showAlert(
+    `Vehicle parked at ${data.slot_allocated}`
+  );
+
+  document.getElementById('vehicleNum').value = '';
+
+  document.getElementById('vehicleType').value = '';
+
+  loadDashboard();
+}
+
+/* ─────────────────────────────────────────────
+   Process Exit
+───────────────────────────────────────────── */
+
+async function processExit() {
+
+  const num =
+    document.getElementById('exitVehicleNum')
+      .value
+      .trim()
+      .toUpperCase();
+
+  const bill =
+    document.getElementById('billCard');
+
+  if (!num) {
+
+    showAlert(
+      'Enter vehicle number.',
+      'error'
+    );
+
+    return;
+  }
+
+  const { ok, data } =
+    await api('/exit', {
+
+      method: 'POST',
+
+      body: JSON.stringify({
+        vehicle_number: num
+      })
+    });
 
   if (!ok) {
 
@@ -347,7 +398,10 @@ async function processExit() {
 
   document.getElementById('exitVehicleNum').value = '';
 
-  showAlert(data.message, 'success');
+  showAlert(
+    data.message,
+    'success'
+  );
 
   loadSummary();
 
@@ -405,19 +459,25 @@ async function processExit() {
 
       <div class="bill-row">
         <span class="bill-label">Rate</span>
-        <span class="bill-value">₹20 / hr</span>
+        <span class="bill-value">
+          ₹20 / hr
+        </span>
       </div>
 
-      <div class="bill-row">
+      <div class="bill-row total">
         <span class="bill-label">Total Fee</span>
-        <span class="bill-value">₹${data.fee}</span>
+        <span class="bill-value">
+          ₹${data.fee}
+        </span>
       </div>
 
     </div>
   `;
 }
 
-// ── Logs ──────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Load Logs
+───────────────────────────────────────────── */
 
 async function loadLogs(page) {
 
@@ -426,14 +486,18 @@ async function loadLogs(page) {
 
   const qs =
     `?page=${page}&limit=50${
-      status ? '&status=' + status : ''
+      status
+        ? '&status=' + status
+        : ''
     }`;
 
-  const { ok, data } = await api('/logs' + qs);
+  const { ok, data } =
+    await api('/logs' + qs);
 
   if (!ok) return;
 
-  const tbody = document.getElementById('logsBody');
+  const tbody =
+    document.getElementById('logsBody');
 
   if (!data.logs.length) {
 
@@ -445,27 +509,35 @@ async function loadLogs(page) {
       </tr>
     `;
 
-    document.getElementById('logPagination').innerHTML = '';
+    document
+      .getElementById('logPagination')
+      .innerHTML = '';
 
     return;
   }
 
   tbody.innerHTML = data.logs.map(l => {
 
-    const dur = l.fee != null
-      ? calcDur(l.entry_time, l.exit_time)
-      : '—';
+    const dur =
+      l.fee != null
+        ? calcDur(
+            l.entry_time,
+            l.exit_time
+          )
+        : '—';
 
     return `
 
       <tr>
 
         <td>
-          <strong>${l.vehicle_number}</strong>
+          <strong>
+            ${l.vehicle_number}
+          </strong>
         </td>
 
         <td>
-          ${l.slot_id} (${l.floor})
+          ${l.slot_id}
         </td>
 
         <td>
@@ -473,26 +545,34 @@ async function loadLogs(page) {
         </td>
 
         <td>
-          ${l.exit_time
-            ? formatTime(l.exit_time)
-            : '—'}
-        </td>
-
-        <td>${dur}</td>
-
-        <td>
-          ${l.fee != null
-            ? '₹' + l.fee
-            : '—'}
-        </td>
-
-        <td>
-
-          <span class="badge ${
+          ${
             l.exit_time
-              ? 'done'
-              : 'active'
-          }">
+              ? formatTime(l.exit_time)
+              : '—'
+          }
+        </td>
+
+        <td>
+          ${dur}
+        </td>
+
+        <td>
+          ${
+            l.fee != null
+              ? '₹' + l.fee
+              : '—'
+          }
+        </td>
+
+        <td>
+
+          <span
+            class="badge ${
+              l.exit_time
+                ? 'done'
+                : 'active'
+            }"
+          >
 
             ${
               l.exit_time
@@ -509,7 +589,8 @@ async function loadLogs(page) {
 
   }).join('');
 
-  const pages = Math.ceil(data.total / 50);
+  const pages =
+    Math.ceil(data.total / 50);
 
   buildPagination(
     'logPagination',
@@ -519,25 +600,28 @@ async function loadLogs(page) {
   );
 }
 
-// ── Cleanup Logs ──────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Cleanup Logs
+───────────────────────────────────────────── */
 
 async function cleanupLogs() {
 
-  if (!confirm(
-    'Delete all completed parking logs?'
-  )) return;
+  if (
+    !confirm(
+      'Delete completed logs?'
+    )
+  ) return;
 
-  const { ok, data } = await api(
-    '/logs/cleanup',
-    {
+  const { ok, data } =
+    await api('/logs/cleanup', {
+
       method: 'DELETE'
-    }
-  );
+    });
 
   showAlert(
 
     ok
-      ? `Deleted ${data.deleted} completed log(s).`
+      ? `Deleted ${data.deleted} logs`
       : 'Error',
 
     ok
@@ -551,20 +635,23 @@ async function cleanupLogs() {
   }
 }
 
-// ── Reset System ──────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Reset System
+───────────────────────────────────────────── */
 
 async function resetAll() {
 
-  if (!confirm(
-    'Reset ALL slots to free and clear all logs?'
-  )) return;
+  if (
+    !confirm(
+      'Reset ALL slots and logs?'
+    )
+  ) return;
 
-  const { ok, data } = await api(
-    '/reset',
-    {
+  const { ok, data } =
+    await api('/reset', {
+
       method: 'POST'
-    }
-  );
+    });
 
   showAlert(
 
@@ -583,7 +670,9 @@ async function resetAll() {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Helpers
+───────────────────────────────────────────── */
 
 function formatTime(iso) {
 
@@ -618,9 +707,15 @@ function calcDur(entry, exit) {
     : `${m}m`;
 }
 
-function buildPagination(id, total, current, onClick) {
+function buildPagination(
+  id,
+  total,
+  current,
+  onClick
+) {
 
-  const el = document.getElementById(id);
+  const el =
+    document.getElementById(id);
 
   if (total <= 1) {
 
@@ -629,46 +724,57 @@ function buildPagination(id, total, current, onClick) {
     return;
   }
 
-  let html = '';
+  let html = `
+    <button
+      class="page-btn"
+
+      ${current === 1 ? 'disabled' : ''}
+
+      onclick="(${onClick})(${current - 1})"
+    >
+      ←
+    </button>
+  `;
 
   for (let i = 1; i <= total; i++) {
 
-    if (
-      i === 1 ||
-      i === total ||
-      Math.abs(i - current) <= 2
-    ) {
+    html += `
 
-      html += `
+      <button
 
-        <button
-          class="page-btn ${
-            i === current ? 'active' : ''
-          }"
+        class="
+          page-btn
+          ${i === current ? 'active' : ''}
+        "
 
-          onclick="(${onClick})(${i})">
+        onclick="(${onClick})(${i})"
+      >
 
-          ${i}
+        ${i}
 
-        </button>
-      `;
-
-    } else if (
-      Math.abs(i - current) === 3
-    ) {
-
-      html += `
-        <span class="page-btn"
-          style="cursor:default">
-          …
-        </span>
-      `;
-    }
+      </button>
+    `;
   }
+
+  html += `
+    <button
+      class="page-btn"
+
+      ${current === total ? 'disabled' : ''}
+
+      onclick="(${onClick})(${current + 1})"
+    >
+      →
+    </button>
+  `;
 
   el.innerHTML = html;
 }
 
-// ── Initialize ────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────
+   Init
+───────────────────────────────────────────── */
 
+loadSummary();
 loadDashboard();
+loadLogs(1);

@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from pydantic import BaseModel
 
@@ -48,11 +49,16 @@ app.add_middleware(
 # Static Files
 # ─────────────────────────────────────────────
 
-app.mount(
-    "/frontend",
-    StaticFiles(directory="frontend"),
-    name="frontend"
-)
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+
+# ─────────────────────────────────────────────
+# Home API
+# ─────────────────────────────────────────────
+
+@app.get("/")
+def home():
+    return FileResponse("frontend/index.html")
+
 
 app.mount(
     "/static",
@@ -66,11 +72,14 @@ app.mount(
 
 app.include_router(parking.router)
 app.include_router(vehicle.router)
-app.include_router(slots.router)
+app.include_router(
+    slots.router,
+    prefix="/slots",
+    tags=["Slots"]
+)
 app.include_router(billing.router)
 app.include_router(transaction.router)
 app.include_router(analytics.router)
-
 # ─────────────────────────────────────────────
 # MongoDB Connection
 # ─────────────────────────────────────────────
@@ -149,13 +158,6 @@ initialize_slots()
 class VehicleIn(BaseModel):
     vehicle_number: str
 
-# ─────────────────────────────────────────────
-# Home API
-# ─────────────────────────────────────────────
-
-@app.get("/")
-def home():
-    return FileResponse("frontend/index.html")
 
 # ─────────────────────────────────────────────
 # Favicon API
@@ -176,109 +178,136 @@ def health():
     }
 
 # ─────────────────────────────────────────────
-# Slot Summary
-# ─────────────────────────────────────────────
-
-@app.get("/slots/summary")
-def slots_summary():
-
-    try:
-
-        free = slots_col.count_documents({
-            "status": "free"
-        })
-
-        occupied = slots_col.count_documents({
-            "status": "occupied"
-        })
-
-        total = len(FLOORS) * SLOTS_PER_FLOOR
-
-        return {
-            "total": total,
-            "free": free,
-            "occupied": occupied
-        }
-
-    except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=f"Summary Error: {str(e)}"
-        )
-
-# ─────────────────────────────────────────────
 # Vehicle Entry
 # ─────────────────────────────────────────────
 
+from datetime import datetime
+
+# Vehicle Type → Allowed Floors
+
+vehicle_floor_map = {
+
+    "Large Vehicle": ["B1"],
+
+    "Mini Truck": ["B2"],
+
+    "Four Wheeler": ["L1"],
+
+    "Two Wheeler": ["L2", "L3"]
+}
+
+
+# Vehicle Entry
+
 @app.post("/entry")
-def vehicle_entry(body: VehicleIn):
+def vehicle_entry(data: dict):
 
     try:
 
-        vehicle_number = body.vehicle_number.strip().upper()
+        vehicle_number = data.get("vehicle_number")
+        vehicle_type = data.get("vehicle_type")
+
+        if not vehicle_number or not vehicle_type:
+
+            return {
+                "error": "Vehicle Number and Vehicle Type required"
+            }
+
+        # Validate vehicle type
+
+        allowed_floors = vehicle_floor_map.get(vehicle_type)
+
+        if not allowed_floors:
+
+            return {
+                "error": "Invalid Vehicle Type"
+            }
+
+        # Check if vehicle already parked
 
         existing = logs_col.find_one({
+
             "vehicle_number": vehicle_number,
+
             "exit_time": None
         })
 
         if existing:
 
-            raise HTTPException(
-                status_code=409,
-                detail="Vehicle already parked."
-            )
+            return {
+                "error": "Vehicle already parked"
+            }
 
-        slot = slots_col.find_one_and_update(
-            {"status": "free"},
-            {"$set": {"status": "occupied"}}
-        )
+        # Find free slot only in allowed floors
+
+        slot = slots_col.find_one({
+
+            "floor": {"$in": allowed_floors},
+
+            "status": "free"
+        })
 
         if not slot:
 
-            raise HTTPException(
-                status_code=400,
-                detail="No free slots available."
-            )
+            return {
+                "error": f"No slots available for {vehicle_type}"
+            }
 
-        entry_time = datetime.utcnow()
+        # Update slot status
 
-        logs_col.insert_one({
+        slots_col.update_one(
+
+            {"slot_id": slot["slot_id"]},
+
+            {
+                "$set": {
+                    "status": "occupied",
+                    "vehicle_number": vehicle_number
+                }
+            }
+        )
+
+        # Create parking log
+
+        log_data = {
 
             "vehicle_number": vehicle_number,
 
+            "vehicle_type": vehicle_type,
+
             "slot_id": slot["slot_id"],
 
             "floor": slot["floor"],
 
-            "entry_time": entry_time,
+            "entry_time": datetime.utcnow(),
 
             "exit_time": None,
 
+            "duration_minutes": None,
+
             "fee": None
-        })
+        }
+
+        logs_col.insert_one(log_data)
 
         return {
 
-            "message": "Vehicle parked successfully",
+            "message": "Vehicle Parked Successfully",
 
-            "slot_id": slot["slot_id"],
+            "vehicle_number": vehicle_number,
 
-            "floor": slot["floor"],
+            "vehicle_type": vehicle_type,
 
-            "entry_time": entry_time
+            "slot_allocated": slot["slot_id"],
+
+            "floor": slot["floor"]
         }
-
-    except HTTPException as e:
-        raise e
 
     except Exception as e:
 
-        raise HTTPException(
-            status_code=500,
-            detail=f"Vehicle Entry Error: {str(e)}"
-        )
+        return {
+            "error": str(e)
+        }
 
 # ─────────────────────────────────────────────
 # Vehicle Exit
@@ -329,7 +358,8 @@ def vehicle_exit(body: VehicleIn):
             },
             {
                 "$set": {
-                    "status": "free"
+                    "status": "free",
+                    "vehicle_number": None
                 }
             }
         )
@@ -418,11 +448,18 @@ def vehicle_exit(body: VehicleIn):
 # ─────────────────────────────────────────────
 
 @app.get("/logs")
-def get_logs():
+def get_logs(page: int = 1, limit: int = 50):
 
     try:
 
-        docs = logs_col.find().sort("entry_time", -1)
+        skip = (page - 1) * limit
+
+        docs = list(
+            logs_col.find({}, {"_id": 0})
+            .sort("entry_time", -1)
+            .skip(skip)
+            .limit(limit)
+        )
 
         results = []
 
@@ -430,11 +467,15 @@ def get_logs():
 
             results.append({
 
-                "vehicle_number": d["vehicle_number"],
+                "vehicle_number": d.get("vehicle_number"),
 
-                "slot_id": d["slot_id"],
+                "slot_id": d.get("slot_id"),
 
-                "floor": d["floor"],
+                "slot_number": d.get("slot_number"),
+
+                "floor": d.get("floor"),
+
+                "status": d.get("status"),
 
                 "entry_time": (
                     d["entry_time"].isoformat()
@@ -449,69 +490,21 @@ def get_logs():
                 ),
 
                 "fee": d.get("fee")
+
             })
 
-        return results
-
-    except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=f"Logs Error: {str(e)}"
-        )
-
-# ─────────────────────────────────────────────
-# Cleanup Logs
-# ─────────────────────────────────────────────
-
-@app.delete("/logs/cleanup")
-def cleanup_logs():
-
-    try:
-
-        result = logs_col.delete_many({
-            "exit_time": {"$ne": None}
-        })
-
         return {
-            "deleted": result.deleted_count
+
+            "logs": results,
+
+            "total": logs_col.count_documents({})
+
         }
 
     except Exception as e:
 
-        raise HTTPException(
-            status_code=500,
-            detail=f"Cleanup Error: {str(e)}"
-        )
-
-# ─────────────────────────────────────────────
-# Reset System
-# ─────────────────────────────────────────────
-
-@app.post("/reset")
-def reset_system():
-
-    try:
-
-        slots_col.update_many(
-            {},
-            {
-                "$set": {
-                    "status": "free"
-                }
-            }
-        )
-
-        logs_col.delete_many({})
-        vehicles_col.delete_many({})
-
         return {
-            "message": "System reset successful"
+
+            "error": str(e)
+
         }
-
-    except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=f"Reset Error: {str(e)}"
-        )

@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException
+from pymongo.errors import PyMongoError
 
 from app.mongodb import (
-    slots_collection,
+    parking_collection,
+    billing_collection,
     transaction_collection,
-    parking_collection
+    vehicle_collection
 )
 
 router = APIRouter(
@@ -11,147 +13,162 @@ router = APIRouter(
     tags=["Analytics"]
 )
 
-# ─────────────────────────────────────────────
 # Parking Occupancy
-# ─────────────────────────────────────────────
-
 @router.get("/occupancy")
 def parking_occupancy():
 
     try:
+        total_slots = parking_collection.count_documents({})
 
-        total = slots_collection.count_documents({})
-
-        occupied = slots_collection.count_documents({
-            "status": "occupied"
-        })
-
-        rate = 0
-
-        if total > 0:
-
-            rate = round((occupied / total) * 100, 2)
-
-        return {
-            "total_slots": total,
-            "occupied_slots": occupied,
-            "occupancy_rate": f"{rate}%"
-        }
-
-    except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
+        occupied_slots = parking_collection.count_documents(
+            {"status": "Occupied"}
         )
 
-# ─────────────────────────────────────────────
-# Revenue Analytics
-# ─────────────────────────────────────────────
+        if total_slots == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No Parking Slot Data Found"
+            )
 
+        occupancy_rate = (
+            occupied_slots / total_slots
+        ) * 100
+
+        return {
+            "total_slots": total_slots,
+            "occupied_slots": occupied_slots,
+            "occupancy_rate": f"{occupancy_rate:.2f}%"
+        }
+
+    except HTTPException as e:
+        raise e
+
+    except PyMongoError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database Error: {str(e)}"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected Error: {str(e)}"
+        )
+
+
+# Revenue Analytics
 @router.get("/revenue")
 def revenue():
 
     try:
-
         transactions = list(
-            transaction_collection.find({})
+            transaction_collection.find({}, {"_id": 0})
         )
 
-        total = 0
+        if not transactions:
+            raise HTTPException(
+                status_code=404,
+                detail="No Transaction Data Found"
+            )
 
-        for t in transactions:
-
-            total += t.get("amount", 0)
+        total_revenue = sum(
+            transaction.get("amount", 0)
+            for transaction in transactions
+        )
 
         return {
-            "total_revenue": total,
-            "transactions": len(transactions)
+            "total_revenue": total_revenue
         }
 
-    except Exception as e:
+    except HTTPException as e:
+        raise e
 
+    except PyMongoError as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail=f"Database Error: {str(e)}"
         )
 
-# ─────────────────────────────────────────────
-# Peak Hour Analytics
-# ─────────────────────────────────────────────
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected Error: {str(e)}"
+        )
 
+
+# Peak Hour Analytics
 @router.get("/peak-hours")
 def peak_hours():
 
     try:
+        pipeline = [
+            {
+                "$group": {
+                    "_id": "$entry_hour",
+                    "count": {"$sum": 1}
+                }
+            },
+            {
+                "$sort": {"count": -1}
+            },
+            {
+                "$limit": 1
+            }
+        ]
 
-        logs = list(
-            parking_collection.find({})
+        result = list(
+            parking_collection.aggregate(pipeline)
         )
 
-        hours = {}
-
-        for log in logs:
-
-            if log.get("entry_time"):
-
-                hour = log["entry_time"].hour
-
-                hours[hour] = hours.get(hour, 0) + 1
-
-        if not hours:
-
-            return {
-                "peak_hour": "No Data"
-            }
-
-        peak = max(hours, key=hours.get)
+        if not result:
+            raise HTTPException(
+                status_code=404,
+                detail="No Peak Hour Data Found"
+            )
 
         return {
-            "peak_hour": f"{peak}:00 - {peak+1}:00",
-            "vehicle_count": hours[peak]
+            "peak_hour": result[0]["_id"],
+            "vehicle_count": result[0]["count"]
         }
 
-    except Exception as e:
+    except HTTPException as e:
+        raise e
 
+    except PyMongoError as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail=f"Database Error: {str(e)}"
         )
 
-# ─────────────────────────────────────────────
-# Vehicle Count Analytics
-# ─────────────────────────────────────────────
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected Error: {str(e)}"
+        )
 
+
+# Vehicle Count Analytics
 @router.get("/vehicle-count")
 def vehicle_count():
 
     try:
-
-        total = parking_collection.count_documents({})
-
-        active = parking_collection.count_documents({
-            "exit_time": None
-        })
-
-        completed = parking_collection.count_documents({
-            "exit_time": {
-                "$ne": None
-            }
-        })
+        total_vehicles = vehicle_collection.count_documents({})
 
         return {
-
-            "total_vehicles": total,
-
-            "currently_parked": active,
-
-            "completed_parking": completed
+            "total_vehicles": total_vehicles
         }
 
-    except Exception as e:
+    except HTTPException as e:
+        raise e
 
+    except PyMongoError as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail=f"Database Error: {str(e)}"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected Error: {str(e)}"
         )
