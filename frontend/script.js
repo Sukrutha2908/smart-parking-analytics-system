@@ -46,6 +46,13 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     if (view === 'slots') {
 
       loadDashboard();
+
+      setTimeout(() => {
+        
+        renderSlots();
+      
+      }, 100);
+
     }
 
     if (view === 'logs') {
@@ -189,20 +196,19 @@ async function loadDashboard() {
 function renderSlots() {
 
   const sf =
-    document.getElementById('filterStatus').value;
+    document.getElementById('filterStatus')?.value || 'all';
 
   const nf =
     (
       document
-        .getElementById('filterSlot')
-        .value || ''
+      .getElementById('filterSlot')?.value || ''
     )
     .trim();
 
   let list = allSlots;
 
   const floor =
-  document.getElementById('floorFilter').value;
+    document.getElementById('floorFilter')?.value || '';
   
   if (floor) {
     list = list.filter(
@@ -248,7 +254,9 @@ function renderSlots() {
 
       ? paged.map(s => `
 
-        <div class="slot ${s.status}">
+        <div 
+          class="slot ${s.status}"
+          data-slot-id="${s.slot_id}">
 
           <div class="slot-num">
             ${s.slot_id}
@@ -771,10 +779,362 @@ function buildPagination(
   el.innerHTML = html;
 }
 
+async function loadRevenueChart() {
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/analytics/revenue"
+        );
+
+        const data = await response.json();
+
+        console.log("Revenue Data:", data);
+
+        const labels =
+            data.map(item => item.date);
+
+        const revenues =
+            data.map(item => item.revenue);
+
+        const canvas =
+            document.getElementById("revenueChart");
+
+        if (!canvas) {
+
+            console.error(
+                "Revenue canvas not found"
+            );
+
+            return;
+        }
+
+        const ctx =
+            canvas.getContext("2d");
+
+        // destroy old chart if exists
+
+        if (window.revenueChartInstance) {
+
+            window.revenueChartInstance.destroy();
+        }
+
+        window.revenueChartInstance =
+            new Chart(ctx, {
+
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [{
+
+                        label: "Revenue",
+
+                        data: revenues,
+
+                        borderColor: "#10b981",
+
+                        backgroundColor:
+                            "rgba(16,185,129,0.15)",
+
+                        borderWidth: 3,
+
+                        fill: true,
+
+                        tension: 0.4,
+
+                        pointRadius: 4
+
+                    }]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+
+                            display: true
+                        }
+                    },
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+    } catch (error) {
+
+        console.error(
+            "Revenue chart error:",
+            error
+        );
+    }
+}
+
+// ==========================
+// FLOOR OCCUPANCY
+// ==========================
+
+async function loadFloorOccupancyCharts() {
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/slots"
+        );
+
+        const slots = await response.json();
+
+        const floorStats = {};
+
+        slots.forEach(slot => {
+
+            const floor = slot.floor || "Unknown";
+
+            if (!floorStats[floor]) {
+
+                floorStats[floor] = {
+                    total: 0,
+                    occupied: 0
+                };
+            }
+
+            floorStats[floor].total++;
+
+            if (slot.status === "occupied") {
+
+                floorStats[floor].occupied++;
+            }
+        });
+
+        const floorGrid =
+            document.getElementById("floorGrid");
+
+        if (!floorGrid) return;
+
+        floorGrid.innerHTML = "";
+
+        Object.keys(floorStats).forEach(floor => {
+
+            const stats = floorStats[floor];
+
+            const percent =
+                Math.round(
+                    (stats.occupied / stats.total) * 100
+                );
+
+            floorGrid.innerHTML += `
+
+                <div class="floor-card">
+
+                    <div class="floor-title">
+                        ${floor}
+                    </div>
+
+                    <div class="progress-bar">
+
+                        <div 
+                            class="progress-fill"
+                            style="width:${percent}%"
+                        ></div>
+
+                    </div>
+
+                    <div class="floor-percent">
+                        ${percent}% Occupied
+                    </div>
+
+                </div>
+            `;
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Floor occupancy error:",
+            error
+        );
+    }
+}
+
 /* ─────────────────────────────────────────────
-   Init
+   Load Charts
 ───────────────────────────────────────────── */
 
-loadSummary();
-loadDashboard();
-loadLogs(1);
+window.addEventListener("resize", () => {
+
+    if (window.myOccupancyChart) {
+
+        window.myOccupancyChart.resize();
+    }
+
+    if (window.myVehicleChart) {
+
+        window.myVehicleChart.resize();
+    }
+});
+
+document.getElementById(
+  "currentDate"
+).textContent = new Date()
+.toLocaleDateString(
+  "en-IN",
+  {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }
+);
+
+/* =========================
+   WINDOW LOAD
+========================= */
+
+window.onload = async () => {
+
+    // Dashboard cards
+    await loadSummary();
+
+    // Slot page
+    await loadDashboard();
+
+    // Logs
+    await loadLogs(1);
+
+    // Revenue chart
+    setTimeout(() => {
+
+        if (document.getElementById("revenueChart")) {
+
+            loadRevenueChart();
+        }
+
+    }, 500);
+
+    // Floor occupancy
+    setTimeout(() => {
+
+        if (document.getElementById("floorGrid")) {
+
+            loadFloorOccupancyCharts();
+        }
+
+    }, 800);
+
+    // Current date
+    const dateElement =
+        document.getElementById("currentDate");
+
+    if (dateElement) {
+
+        dateElement.textContent =
+            new Date().toLocaleDateString(
+                "en-IN",
+                {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                }
+            );
+    }
+};
+
+/* =========================
+   WINDOW RESIZE
+========================= */
+
+window.addEventListener("resize", () => {
+
+    if (window.myOccupancyChart) {
+
+        window.myOccupancyChart.resize();
+    }
+
+    if (window.myVehicleChart) {
+
+        window.myVehicleChart.resize();
+    }
+});
+
+const socket = new WebSocket(
+    "ws://127.0.0.1:8000/ws"
+);
+
+socket.onopen = () => {
+
+    console.log(
+        "WebSocket Connected"
+    );
+
+    socket.send("connected");
+};
+
+socket.onmessage = (event) => {
+
+    const data = JSON.parse(
+        event.data
+    );
+
+    console.log(
+        "Live Update:",
+        data
+    );
+
+    const slotCard = document.querySelector(
+
+        `[data-slot-id="${data.slot_id}"]`
+    );
+
+    if (slotCard) {
+
+        if (data.status === "occupied") {
+
+            slotCard.classList.remove(
+                "free"
+            );
+
+            slotCard.classList.add(
+                "occupied"
+            );
+
+            slotCard.innerHTML = `
+
+                <h3>${data.slot_id}</h3>
+
+                <p>Occupied</p>
+            `;
+        }
+
+        else {
+
+            slotCard.classList.remove(
+                "occupied"
+            );
+
+            slotCard.classList.add(
+                "free"
+            );
+
+            slotCard.innerHTML = `
+
+                <h3>${data.slot_id}</h3>
+
+                <p>Free</p>
+            `;
+        }
+    }
+};

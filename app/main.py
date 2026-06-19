@@ -7,6 +7,9 @@ from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from pydantic import BaseModel
 
+from fastapi import WebSocket
+from app.websocket_manager import manager
+
 from datetime import datetime
 from uuid import uuid4
 
@@ -23,6 +26,7 @@ from app.routers import billing
 from app.routers import transaction
 from app.routers import analytics
 
+
 # ─────────────────────────────────────────────
 # FastAPI App
 # ─────────────────────────────────────────────
@@ -32,6 +36,30 @@ app = FastAPI(
     version="1.0.0",
     description="Real-Time Smart Parking Management System"
 )
+
+@app.websocket("/ws")
+
+async def websocket_endpoint(
+
+    websocket: WebSocket
+):
+
+    await manager.connect(
+        websocket
+    )
+
+    try:
+
+        while True:
+
+            await websocket.receive_text()
+
+    except:
+
+        manager.disconnect(
+            websocket
+        )
+
 
 # ─────────────────────────────────────────────
 # CORS Middleware

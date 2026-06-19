@@ -72,10 +72,26 @@ def get_slots():
     try:
 
         slots = list(
-            slot_collection.find({}, {"_id": 0})
+
+            slot_collection.find({}).sort([
+
+                ("floor", 1),
+
+                ("slot_number", 1)
+
+            ])
+
         )
 
-        return slots
+        cleaned_slots = []
+
+        for slot in slots:
+
+            slot["_id"] = str(slot["_id"])
+
+            cleaned_slots.append(slot)
+
+        return cleaned_slots
 
     except Exception as e:
 
@@ -83,7 +99,6 @@ def get_slots():
 
             "error": str(e)
         }
-
 
 # ---------------------------------------------------
 # SLOT SUMMARY

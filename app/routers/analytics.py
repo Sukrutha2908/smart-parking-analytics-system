@@ -57,44 +57,78 @@ def parking_occupancy():
 
 
 # Revenue Analytics
+from datetime import datetime
+
 @router.get("/revenue")
 def revenue():
 
     try:
-        transactions = list(
-            transaction_collection.find({}, {"_id": 0})
+
+        pipeline = [
+
+            {
+                "$group": {
+
+                    "_id": {
+                        "$dateToString": {
+                            "format": "%Y-%m-%d",
+                            "date": "$transaction_time"
+                        }
+                    },
+
+                    "total_revenue": {
+                        "$sum": "$amount"
+                    }
+                }
+            },
+
+            {
+                "$sort": {
+                    "_id": 1
+                }
+            }
+        ]
+
+        result = list(
+            transaction_collection.aggregate(pipeline)
         )
 
-        if not transactions:
+        if not result:
+
             raise HTTPException(
                 status_code=404,
-                detail="No Transaction Data Found"
+                detail="No Revenue Data Found"
             )
 
-        total_revenue = sum(
-            transaction.get("amount", 0)
-            for transaction in transactions
-        )
+        revenue_data = []
 
-        return {
-            "total_revenue": total_revenue
-        }
+        for item in result:
+
+            revenue_data.append({
+
+                "date": item["_id"],
+
+                "revenue": item["total_revenue"]
+            })
+
+        return revenue_data
 
     except HTTPException as e:
         raise e
 
     except PyMongoError as e:
+
         raise HTTPException(
             status_code=500,
             detail=f"Database Error: {str(e)}"
         )
 
     except Exception as e:
+
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected Error: {str(e)}"
         )
-
 
 # Peak Hour Analytics
 @router.get("/peak-hours")
