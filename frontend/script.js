@@ -1,8 +1,8 @@
 'use strict';
 
-/* ─────────────────────────────────────────────
+/* =========================================
    API
-───────────────────────────────────────────── */
+========================================= */
 
 const API_BASE = '';
 
@@ -12,807 +12,225 @@ let dashPage = 1;
 
 const PER_PAGE = 200;
 
-/* ─────────────────────────────────────────────
-   Navigation
-───────────────────────────────────────────── */
+/* =========================================
+   NAVIGATION
+========================================= */
 
 document.querySelectorAll('.nav-item').forEach(btn => {
 
-  btn.addEventListener('click', () => {
+    btn.addEventListener('click', () => {
 
-    document
-      .querySelectorAll('.nav-item')
-      .forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.nav-item')
+            .forEach(b => b.classList.remove('active'));
 
-    document
-      .querySelectorAll('.view')
-      .forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.view')
+            .forEach(v => v.classList.remove('active'));
 
-    btn.classList.add('active');
+        btn.classList.add('active');
 
-    const view = btn.dataset.view;
+        const view = btn.dataset.view;
 
-    document
-      .getElementById('view-' + view)
-      .classList.add('active');
+        document
+            .getElementById('view-' + view)
+            .classList.add('active');
 
-    clearAlert();
+        if (view === 'dashboard') {
 
-    if (view === 'dashboard') {
+            loadDashboardData();
+        }
 
-      loadSummary();
-    }
+        if (view === 'slots') {
 
-    if (view === 'slots') {
+            loadSlots();
+        }
 
-      loadDashboard();
+        if (view === 'logs') {
 
-      setTimeout(() => {
-        
-        renderSlots();
-      
-      }, 100);
-
-    }
-
-    if (view === 'logs') {
-
-      loadLogs(1);
-    }
-  });
+            loadLogs(1);
+        }
+    });
 });
 
-/* ─────────────────────────────────────────────
-   Alerts
-───────────────────────────────────────────── */
+/* =========================================
+   ALERTS
+========================================= */
 
-function showAlert(msg, type = 'success') {
+function showAlert(message, type = 'success') {
 
-  const box =
-    document.getElementById('alertBox');
+    const box =
+        document.getElementById('alertBox');
 
-  box.textContent = msg;
+    if (!box) return;
 
-  box.className = `alert ${type}`;
+    box.textContent = message;
 
-  box.classList.remove('hidden');
+    box.className = `alert ${type}`;
 
-  setTimeout(() => {
+    box.classList.remove('hidden');
 
-    clearAlert();
+    setTimeout(() => {
 
-  }, 4000);
+        box.classList.add('hidden');
+
+    }, 3000);
 }
 
-function clearAlert() {
-
-  document
-    .getElementById('alertBox')
-    .className = 'alert hidden';
-}
-
-/* ─────────────────────────────────────────────
-   API Helper
-───────────────────────────────────────────── */
+/* =========================================
+   API HELPER
+========================================= */
 
 async function api(path, options = {}) {
 
-  try {
+    try {
 
-    const res = await fetch(
-      API_BASE + path,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        const response = await fetch(
+            API_BASE + path,
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                ...options
+            }
+        );
 
-        ...options
-      }
-    );
+        const data = await response.json();
 
-    const data = await res.json();
+        return {
+            ok: response.ok,
+            data
+        };
 
-    return {
-      ok: res.ok,
-      status: res.status,
-      data
-    };
+    } catch (error) {
 
-  } catch (err) {
+        console.error(error);
 
-    showAlert(
-      'Cannot connect to backend',
-      'error'
-    );
-
-    return {
-      ok: false,
-      status: 500,
-      data: null
-    };
-  }
+        return {
+            ok: false,
+            data: null
+        };
+    }
 }
 
-/* ─────────────────────────────────────────────
-   Dashboard Summary
-───────────────────────────────────────────── */
+/* =========================================
+   SUMMARY
+========================================= */
 
 async function loadSummary() {
 
-  const { ok, data } =
-    await api('/slots/summary');
+    const { ok, data } =
+        await api('/slots/summary');
 
-  if (!ok) return;
+    if (!ok) return;
 
-  document.getElementById('statTotal').textContent =
-    data.total || 0;
+    document.getElementById('statTotal').textContent =
+        data.total || 0;
 
-  document.getElementById('statFree').textContent =
-    data.free || 0;
+    document.getElementById('statFree').textContent =
+        data.free || 0;
 
-  document.getElementById('statOcc').textContent =
-    data.occupied || 0;
+    document.getElementById('statOcc').textContent =
+        data.occupied || 0;
 
-  const pct =
-    (
-      (data.occupied || 0) /
-      (data.total || 1)
-    ) * 100;
+    const occupancy =
+        ((data.occupied / data.total) * 100).toFixed(1);
 
-  document.getElementById('statPct').textContent =
-    pct.toFixed(1) + '%';
+    document.getElementById('statPct').textContent =
+        occupancy + '%';
 }
 
-/* ─────────────────────────────────────────────
-   Load Dashboard
-───────────────────────────────────────────── */
+/* =========================================
+   LOAD DASHBOARD
+========================================= */
 
-async function loadDashboard() {
+async function loadDashboardData() {
 
-  await loadSummary();
+    await loadSummary();
 
-  const { ok, data } = await api('/slots');
+    await loadRevenueChart();
 
-  console.log(data);
+    await loadFloorOccupancy();
 
-  if (!ok) {
-
-    showAlert(
-      'Failed to load slots',
-      'error'
-    );
-
-    return;
-  }
-
-  allSlots = data;
-
-  renderSlots();
+    loadVehicleDistribution();
 }
-/* ─────────────────────────────────────────────
-   Render Slots
-───────────────────────────────────────────── */
+
+/* =========================================
+   LOAD SLOTS
+========================================= */
+
+async function loadSlots() {
+
+    const { ok, data } =
+        await api('/slots');
+
+    if (!ok) return;
+
+    allSlots = data;
+
+    renderSlots();
+}
+
+/* =========================================
+   RENDER SLOTS
+========================================= */
 
 function renderSlots() {
 
-  const sf =
-    document.getElementById('filterStatus')?.value || 'all';
+    const grid =
+        document.getElementById('slotGrid');
 
-  const nf =
-    (
-      document
-      .getElementById('filterSlot')?.value || ''
-    )
-    .trim();
+    if (!grid) return;
 
-  let list = allSlots;
+    grid.innerHTML = '';
 
-  const floor =
-    document.getElementById('floorFilter')?.value || '';
-  
-  if (floor) {
-    list = list.filter(
-      s => s.floor === floor
-    );
-  }
+    allSlots.forEach(slot => {
 
-  if (sf !== 'all') {
+        grid.innerHTML += `
 
-    list = list.filter(
-      s => s.status === sf
-    );
-  }
+            <div
+                class="slot ${slot.status}"
+                data-slot-id="${slot.slot_id}"
+            >
 
-  if (nf) {
+                <h3>${slot.slot_id}</h3>
 
-    list = list.filter(
-      s =>
-        s.slot_id.toLowerCase().includes(
-          nf.toLowerCase()
-        )
-    );
-  }
+                <p>
+                    ${slot.status}
+                </p>
 
-  const pages = Math.max(
-    1,
-    Math.ceil(list.length / PER_PAGE)
-  );
-
-  if (dashPage > pages) {
-
-    dashPage = pages;
-  }
-
-  const paged = list.slice(
-    (dashPage - 1) * PER_PAGE,
-    dashPage * PER_PAGE
-  );
-
-  document.getElementById('slotGrid').innerHTML =
-
-    paged.length
-
-      ? paged.map(s => `
-
-        <div 
-          class="slot ${s.status}"
-          data-slot-id="${s.slot_id}">
-
-          <div class="slot-num">
-            ${s.slot_id}
-          </div>
-
-          <div class="slot-status">
-            ${
-              s.status
-                ? s.status.charAt(0).toUpperCase() +
-                  s.status.slice(1)
-                : 'Unknown'
-            }
-          </div>
-
-        </div>
-
-      `).join('')
-
-      : `
-        <p style="
-          color:var(--muted);
-          padding:1rem
-        ">
-          No slots found.
-        </p>
-      `;
-
-  buildPagination(
-    'dashPagination',
-    pages,
-    dashPage,
-    p => {
-
-      dashPage = p;
-
-      renderSlots();
-    }
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Register Entry
-───────────────────────────────────────────── */
-
-async function registerEntry() {
-
-  const num =
-    document.getElementById('vehicleNum')
-      .value
-      .trim()
-      .toUpperCase();
-
-  const vehicle_type =
-    document.getElementById('vehicleType')
-      .value;
-
-  if (!num || !vehicle_type) {
-
-    showAlert(
-      'Enter vehicle number and select vehicle type.',
-      'error'
-    );
-
-    return;
-  }
-
-  const { ok, data } =
-    await api('/entry', {
-
-      method: 'POST',
-
-      body: JSON.stringify({
-
-        vehicle_number: num,
-
-        vehicle_type
-      })
-    });
-
-  if (!ok) {
-
-    showAlert(
-      data.detail || 'Error',
-      'error'
-    );
-
-    return;
-  }
-
-  showAlert(
-    `Vehicle parked at ${data.slot_allocated}`
-  );
-
-  document.getElementById('vehicleNum').value = '';
-
-  document.getElementById('vehicleType').value = '';
-
-  loadDashboard();
-}
-
-/* ─────────────────────────────────────────────
-   Process Exit
-───────────────────────────────────────────── */
-
-async function processExit() {
-
-  const num =
-    document.getElementById('exitVehicleNum')
-      .value
-      .trim()
-      .toUpperCase();
-
-  const bill =
-    document.getElementById('billCard');
-
-  if (!num) {
-
-    showAlert(
-      'Enter vehicle number.',
-      'error'
-    );
-
-    return;
-  }
-
-  const { ok, data } =
-    await api('/exit', {
-
-      method: 'POST',
-
-      body: JSON.stringify({
-        vehicle_number: num
-      })
-    });
-
-  if (!ok) {
-
-    showAlert(
-      data.detail || 'Error',
-      'error'
-    );
-
-    bill.classList.add('hidden');
-
-    return;
-  }
-
-  document.getElementById('exitVehicleNum').value = '';
-
-  showAlert(
-    data.message,
-    'success'
-  );
-
-  loadSummary();
-
-  bill.classList.remove('hidden');
-
-  bill.innerHTML = `
-
-    <h3 class="bill-title">
-      Billing Summary
-    </h3>
-
-    <div class="bill-grid">
-
-      <div class="bill-row">
-        <span class="bill-label">Vehicle</span>
-        <span class="bill-value">${data.vehicle_number}</span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Slot</span>
-        <span class="bill-value">
-          ${data.slot_id} (${data.floor})
-        </span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Entry</span>
-        <span class="bill-value">
-          ${formatTime(data.entry_time)}
-        </span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Exit</span>
-        <span class="bill-value">
-          ${formatTime(data.exit_time)}
-        </span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Total Time</span>
-
-        <span class="bill-value">
-
-          ${
-            data.duration_minutes < 60
-
-              ? `${data.duration_minutes} Minutes`
-
-              : `${Math.floor(data.duration_minutes / 60)}h ${data.duration_minutes % 60}m`
-          }
-
-        </span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Rate</span>
-        <span class="bill-value">
-          ₹20 / hr
-        </span>
-      </div>
-
-      <div class="bill-row total">
-        <span class="bill-label">Total Fee</span>
-        <span class="bill-value">
-          ₹${data.fee}
-        </span>
-      </div>
-
-    </div>
-  `;
-}
-
-/* ─────────────────────────────────────────────
-   Load Logs
-───────────────────────────────────────────── */
-
-async function loadLogs(page) {
-
-  const status =
-    document.getElementById('logStatus').value;
-
-  const qs =
-    `?page=${page}&limit=50${
-      status
-        ? '&status=' + status
-        : ''
-    }`;
-
-  const { ok, data } =
-    await api('/logs' + qs);
-
-  if (!ok) return;
-
-  const tbody =
-    document.getElementById('logsBody');
-
-  if (!data.logs.length) {
-
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty">
-          No records found.
-        </td>
-      </tr>
-    `;
-
-    document
-      .getElementById('logPagination')
-      .innerHTML = '';
-
-    return;
-  }
-
-  tbody.innerHTML = data.logs.map(l => {
-
-    const dur =
-      l.fee != null
-        ? calcDur(
-            l.entry_time,
-            l.exit_time
-          )
-        : '—';
-
-    return `
-
-      <tr>
-
-        <td>
-          <strong>
-            ${l.vehicle_number}
-          </strong>
-        </td>
-
-        <td>
-          ${l.slot_id}
-        </td>
-
-        <td>
-          ${formatTime(l.entry_time)}
-        </td>
-
-        <td>
-          ${
-            l.exit_time
-              ? formatTime(l.exit_time)
-              : '—'
-          }
-        </td>
-
-        <td>
-          ${dur}
-        </td>
-
-        <td>
-          ${
-            l.fee != null
-              ? '₹' + l.fee
-              : '—'
-          }
-        </td>
-
-        <td>
-
-          <span
-            class="badge ${
-              l.exit_time
-                ? 'done'
-                : 'active'
-            }"
-          >
-
-            ${
-              l.exit_time
-                ? 'Exited'
-                : 'Parked'
-            }
-
-          </span>
-
-        </td>
-
-      </tr>
-    `;
-
-  }).join('');
-
-  const pages =
-    Math.ceil(data.total / 50);
-
-  buildPagination(
-    'logPagination',
-    pages,
-    page,
-    p => loadLogs(p)
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Cleanup Logs
-───────────────────────────────────────────── */
-
-async function cleanupLogs() {
-
-  if (
-    !confirm(
-      'Delete completed logs?'
-    )
-  ) return;
-
-  const { ok, data } =
-    await api('/logs/cleanup', {
-
-      method: 'DELETE'
-    });
-
-  showAlert(
-
-    ok
-      ? `Deleted ${data.deleted} logs`
-      : 'Error',
-
-    ok
-      ? 'success'
-      : 'error'
-  );
-
-  if (ok) {
-
-    loadLogs(1);
-  }
-}
-
-/* ─────────────────────────────────────────────
-   Reset System
-───────────────────────────────────────────── */
-
-async function resetAll() {
-
-  if (
-    !confirm(
-      'Reset ALL slots and logs?'
-    )
-  ) return;
-
-  const { ok, data } =
-    await api('/reset', {
-
-      method: 'POST'
-    });
-
-  showAlert(
-
-    ok
-      ? data.message
-      : 'Error',
-
-    ok
-      ? 'success'
-      : 'error'
-  );
-
-  if (ok) {
-
-    loadDashboard();
-  }
-}
-
-/* ─────────────────────────────────────────────
-   Helpers
-───────────────────────────────────────────── */
-
-function formatTime(iso) {
-
-  if (!iso) return '—';
-
-  return new Date(iso)
-    .toLocaleString('en-IN', {
-
-      day: '2-digit',
-
-      month: 'short',
-
-      hour: '2-digit',
-
-      minute: '2-digit'
+            </div>
+        `;
     });
 }
 
-function calcDur(entry, exit) {
-
-  const m = Math.floor(
-    (
-      new Date(exit) -
-      new Date(entry)
-    ) / 60000
-  );
-
-  return m >= 60
-
-    ? `${Math.floor(m / 60)}h ${m % 60}m`
-
-    : `${m}m`;
-}
-
-function buildPagination(
-  id,
-  total,
-  current,
-  onClick
-) {
-
-  const el =
-    document.getElementById(id);
-
-  if (total <= 1) {
-
-    el.innerHTML = '';
-
-    return;
-  }
-
-  let html = `
-    <button
-      class="page-btn"
-
-      ${current === 1 ? 'disabled' : ''}
-
-      onclick="(${onClick})(${current - 1})"
-    >
-      ←
-    </button>
-  `;
-
-  for (let i = 1; i <= total; i++) {
-
-    html += `
-
-      <button
-
-        class="
-          page-btn
-          ${i === current ? 'active' : ''}
-        "
-
-        onclick="(${onClick})(${i})"
-      >
-
-        ${i}
-
-      </button>
-    `;
-  }
-
-  html += `
-    <button
-      class="page-btn"
-
-      ${current === total ? 'disabled' : ''}
-
-      onclick="(${onClick})(${current + 1})"
-    >
-      →
-    </button>
-  `;
-
-  el.innerHTML = html;
-}
+/* =========================================
+   REVENUE CHART
+========================================= */
 
 async function loadRevenueChart() {
 
     try {
 
-        const response = await fetch(
-            "http://127.0.0.1:8000/analytics/revenue"
-        );
-
-        const data = await response.json();
-
-        console.log("Revenue Data:", data);
-
-        const labels =
-            data.map(item => item.date);
-
-        const revenues =
-            data.map(item => item.revenue);
-
-        const canvas =
-            document.getElementById("revenueChart");
-
-        if (!canvas) {
-
-            console.error(
-                "Revenue canvas not found"
+        const response =
+            await fetch(
+                'http://127.0.0.1:8000/analytics/revenue'
             );
 
-            return;
-        }
+        const data =
+            await response.json();
+
+        const labels =
+            data.map(d => d.date);
+
+        const revenues =
+            data.map(d => d.revenue);
+
+        const canvas =
+            document.getElementById('revenueChart');
+
+        if (!canvas) return;
 
         const ctx =
-            canvas.getContext("2d");
-
-        // destroy old chart if exists
+            canvas.getContext('2d');
 
         if (window.revenueChartInstance) {
 
@@ -822,7 +240,7 @@ async function loadRevenueChart() {
         window.revenueChartInstance =
             new Chart(ctx, {
 
-                type: "line",
+                type: 'line',
 
                 data: {
 
@@ -830,23 +248,150 @@ async function loadRevenueChart() {
 
                     datasets: [{
 
-                        label: "Revenue",
+                        label: 'Revenue',
 
                         data: revenues,
 
-                        borderColor: "#10b981",
+                        borderColor: '#10b981',
 
                         backgroundColor:
-                            "rgba(16,185,129,0.15)",
-
-                        borderWidth: 3,
+                            'rgba(16,185,129,0.15)',
 
                         fill: true,
 
                         tension: 0.4,
 
-                        pointRadius: 4
+                        borderWidth: 3
+                    }]
+                },
 
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false
+                }
+            });
+
+    } catch (error) {
+
+        console.error(
+            'Revenue chart error',
+            error
+        );
+    }
+}
+
+/* =========================================
+   FLOOR OCCUPANCY
+========================================= */
+
+async function loadFloorOccupancy() {
+
+    const { ok, data } =
+        await api('/slots');
+
+    if (!ok) return;
+
+    const floors = {};
+
+    data.forEach(slot => {
+
+        if (!floors[slot.floor]) {
+
+            floors[slot.floor] = {
+
+                total: 0,
+
+                occupied: 0
+            };
+        }
+
+        floors[slot.floor].total++;
+
+        if (slot.status === 'occupied') {
+
+            floors[slot.floor].occupied++;
+        }
+    });
+
+    const floorGrid =
+        document.getElementById('floorGrid');
+
+    if (!floorGrid) return;
+
+    floorGrid.innerHTML = '';
+
+    let chartIndex = 0;
+
+    Object.keys(floors).forEach(floor => {
+
+        const stats = floors[floor];
+
+        const occupied =
+            Math.round(
+                (stats.occupied / stats.total) * 100
+            );
+
+        const free =
+            100 - occupied;
+
+        const chartId =
+            `floorChart${chartIndex}`;
+
+        floorGrid.innerHTML += `
+
+            <div class="floor-item">
+
+                <h3>${floor}</h3>
+
+                <div class="small-chart">
+
+                    <canvas id="${chartId}"></canvas>
+
+                </div>
+
+                <p>${occupied}% Occupied</p>
+
+            </div>
+        `;
+
+        chartIndex++;
+
+        requestAnimationFrame(() => {
+
+            const canvas =
+                document.getElementById(chartId);
+
+            if (!canvas) return;
+
+            const ctx =
+                canvas.getContext('2d');
+
+            new Chart(ctx, {
+
+                type: 'doughnut',
+
+                data: {
+
+                    labels: [
+                        'Occupied',
+                        'Free'
+                    ],
+
+                    datasets: [{
+
+                        data: [
+                            occupied,
+                            free
+                        ],
+
+                        backgroundColor: [
+                            '#ef4444',
+                            '#10b981'
+                        ],
+
+                        borderWidth: 0
                     }]
                 },
 
@@ -856,285 +401,353 @@ async function loadRevenueChart() {
 
                     maintainAspectRatio: false,
 
+                    animation: false,
+
                     plugins: {
 
                         legend: {
-
-                            display: true
+                            display: false
                         }
                     },
 
-                    scales: {
-
-                        y: {
-
-                            beginAtZero: true
-                        }
-                    }
+                    cutout: '70%'
                 }
             });
-
-    } catch (error) {
-
-        console.error(
-            "Revenue chart error:",
-            error
-        );
-    }
+        });
+    });
 }
 
-// ==========================
-// FLOOR OCCUPANCY
-// ==========================
+/* =========================================
+   VEHICLE DISTRIBUTION
+========================================= */
 
-async function loadFloorOccupancyCharts() {
+function loadVehicleDistribution() {
 
-    try {
-
-        const response = await fetch(
-            "http://127.0.0.1:8000/slots"
+    const container =
+        document.getElementById(
+            'vehicleDistribution'
         );
 
-        const slots = await response.json();
+    if (!container) return;
 
-        const floorStats = {};
+    container.innerHTML = `
 
-        slots.forEach(slot => {
+        <div class="vehicle-stats">
 
-            const floor = slot.floor || "Unknown";
+            <div class="vehicle-row">
 
-            if (!floorStats[floor]) {
+                <span>Cars</span>
 
-                floorStats[floor] = {
-                    total: 0,
-                    occupied: 0
-                };
-            }
+                <strong>60%</strong>
 
-            floorStats[floor].total++;
+            </div>
 
-            if (slot.status === "occupied") {
+            <div class="vehicle-bar">
 
-                floorStats[floor].occupied++;
-            }
-        });
+                <div
+                    class="vehicle-fill blue"
+                    style="width:60%"
+                ></div>
 
-        const floorGrid =
-            document.getElementById("floorGrid");
+            </div>
 
-        if (!floorGrid) return;
+            <div class="vehicle-row">
 
-        floorGrid.innerHTML = "";
+                <span>Bikes</span>
 
-        Object.keys(floorStats).forEach(floor => {
+                <strong>30%</strong>
 
-            const stats = floorStats[floor];
+            </div>
 
-            const percent =
-                Math.round(
-                    (stats.occupied / stats.total) * 100
-                );
+            <div class="vehicle-bar">
 
-            floorGrid.innerHTML += `
+                <div
+                    class="vehicle-fill green"
+                    style="width:30%"
+                ></div>
 
-                <div class="floor-card">
+            </div>
 
-                    <div class="floor-title">
-                        ${floor}
-                    </div>
+            <div class="vehicle-row">
 
-                    <div class="progress-bar">
+                <span>Trucks</span>
 
-                        <div 
-                            class="progress-fill"
-                            style="width:${percent}%"
-                        ></div>
+                <strong>10%</strong>
 
-                    </div>
+            </div>
 
-                    <div class="floor-percent">
-                        ${percent}% Occupied
-                    </div>
+            <div class="vehicle-bar">
 
-                </div>
-            `;
-        });
+                <div
+                    class="vehicle-fill orange"
+                    style="width:10%"
+                ></div>
 
-    } catch (error) {
+            </div>
 
-        console.error(
-            "Floor occupancy error:",
-            error
-        );
-    }
+        </div>
+    `;
 }
 
-/* ─────────────────────────────────────────────
-   Load Charts
-───────────────────────────────────────────── */
+/* =========================================
+   ENTRY
+========================================= */
 
-window.addEventListener("resize", () => {
+async function registerEntry() {
 
-    if (window.myOccupancyChart) {
+    const vehicle_number =
+        document.getElementById('vehicleNum')
+            .value
+            .trim()
+            .toUpperCase();
 
-        window.myOccupancyChart.resize();
+    const vehicle_type =
+        document.getElementById('vehicleType')
+            .value;
+
+    if (!vehicle_number || !vehicle_type) {
+
+        showAlert(
+            'Enter vehicle details',
+            'error'
+        );
+
+        return;
     }
 
-    if (window.myVehicleChart) {
+    const { ok, data } =
+        await api('/entry', {
 
-        window.myVehicleChart.resize();
-    }
-});
+            method: 'POST',
 
-document.getElementById(
-  "currentDate"
-).textContent = new Date()
-.toLocaleDateString(
-  "en-IN",
-  {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  }
-);
+            body: JSON.stringify({
 
-/* =========================
-   WINDOW LOAD
-========================= */
+                vehicle_number,
+                vehicle_type
+            })
+        });
 
-window.onload = async () => {
+    if (!ok) {
 
-    // Dashboard cards
-    await loadSummary();
+        showAlert(
+            data.detail || 'Error',
+            'error'
+        );
 
-    // Slot page
-    await loadDashboard();
-
-    // Logs
-    await loadLogs(1);
-
-    // Revenue chart
-    setTimeout(() => {
-
-        if (document.getElementById("revenueChart")) {
-
-            loadRevenueChart();
-        }
-
-    }, 500);
-
-    // Floor occupancy
-    setTimeout(() => {
-
-        if (document.getElementById("floorGrid")) {
-
-            loadFloorOccupancyCharts();
-        }
-
-    }, 800);
-
-    // Current date
-    const dateElement =
-        document.getElementById("currentDate");
-
-    if (dateElement) {
-
-        dateElement.textContent =
-            new Date().toLocaleDateString(
-                "en-IN",
-                {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
-                }
-            );
-    }
-};
-
-/* =========================
-   WINDOW RESIZE
-========================= */
-
-window.addEventListener("resize", () => {
-
-    if (window.myOccupancyChart) {
-
-        window.myOccupancyChart.resize();
+        return;
     }
 
-    if (window.myVehicleChart) {
+    showAlert(
+        `Allocated ${data.slot_allocated}`
+    );
 
-        window.myVehicleChart.resize();
+    loadDashboardData();
+
+    loadSlots();
+}
+
+/* =========================================
+   EXIT
+========================================= */
+
+async function processExit() {
+
+    const vehicle_number =
+        document.getElementById('exitVehicleNum')
+            .value
+            .trim()
+            .toUpperCase();
+
+    if (!vehicle_number) {
+
+        showAlert(
+            'Enter vehicle number',
+            'error'
+        );
+
+        return;
     }
-});
 
-const socket = new WebSocket(
-    "ws://127.0.0.1:8000/ws"
-);
+    const { ok, data } =
+        await api('/exit', {
+
+            method: 'POST',
+
+            body: JSON.stringify({
+                vehicle_number
+            })
+        });
+
+    if (!ok) {
+
+        showAlert(
+            data.detail || 'Error',
+            'error'
+        );
+
+        return;
+    }
+
+    showAlert(data.message);
+
+    loadDashboardData();
+
+    loadSlots();
+}
+
+/* =========================================
+   LOAD LOGS
+========================================= */
+
+async function loadLogs(page = 1) {
+
+    const { ok, data } =
+        await api(`/logs?page=${page}&limit=50`);
+
+    if (!ok) return;
+
+    const tbody =
+        document.getElementById('logsBody');
+
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    data.logs.forEach(log => {
+
+        tbody.innerHTML += `
+
+            <tr>
+
+                <td>${log.vehicle_number}</td>
+
+                <td>${log.slot_id}</td>
+
+                <td>
+                    ${formatTime(log.entry_time)}
+                </td>
+
+                <td>
+                    ${
+                        log.exit_time
+                        ? formatTime(log.exit_time)
+                        : '-'
+                    }
+                </td>
+
+                <td>
+                    ${
+                        log.exit_time
+                        ? 'Exited'
+                        : 'Parked'
+                    }
+                </td>
+
+            </tr>
+        `;
+    });
+}
+
+/* =========================================
+   FORMAT TIME
+========================================= */
+
+function formatTime(time) {
+
+    if (!time) return '-';
+
+    return new Date(time)
+        .toLocaleString('en-IN');
+}
+
+/* =========================================
+   WEBSOCKET
+========================================= */
+
+const socket =
+    new WebSocket(
+        'ws://127.0.0.1:8000/ws'
+    );
 
 socket.onopen = () => {
 
     console.log(
-        "WebSocket Connected"
+        'WebSocket Connected'
     );
-
-    socket.send("connected");
 };
 
-socket.onmessage = (event) => {
+socket.onmessage = async (event) => {
 
-    const data = JSON.parse(
-        event.data
-    );
+    const data =
+        JSON.parse(event.data);
 
     console.log(
-        "Live Update:",
+        'Live Update:',
         data
     );
 
-    const slotCard = document.querySelector(
+    const slotCard =
+        document.querySelector(
 
-        `[data-slot-id="${data.slot_id}"]`
-    );
+            `[data-slot-id="${data.slot_id}"]`
+        );
 
     if (slotCard) {
 
-        if (data.status === "occupied") {
+        slotCard.classList.remove(
+            'free',
+            'occupied'
+        );
 
-            slotCard.classList.remove(
-                "free"
-            );
+        slotCard.classList.add(
+            data.status
+        );
 
-            slotCard.classList.add(
-                "occupied"
-            );
+        slotCard.innerHTML = `
 
-            slotCard.innerHTML = `
+            <h3>${data.slot_id}</h3>
 
-                <h3>${data.slot_id}</h3>
-
-                <p>Occupied</p>
-            `;
-        }
-
-        else {
-
-            slotCard.classList.remove(
-                "occupied"
-            );
-
-            slotCard.classList.add(
-                "free"
-            );
-
-            slotCard.innerHTML = `
-
-                <h3>${data.slot_id}</h3>
-
-                <p>Free</p>
-            `;
-        }
+            <p>${data.status}</p>
+        `;
     }
+
+    await loadSummary();
+
+    await loadFloorOccupancy();
+};
+
+/* =========================================
+   CURRENT DATE
+========================================= */
+
+const dateBox =
+    document.getElementById(
+        'currentDate'
+    );
+
+if (dateBox) {
+
+    dateBox.textContent =
+        new Date().toLocaleDateString(
+            'en-IN',
+            {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            }
+        );
+}
+
+/* =========================================
+   WINDOW LOAD
+========================================= */
+
+window.onload = async () => {
+
+    await loadDashboardData();
+
+    await loadSlots();
+
+    await loadLogs();
 };

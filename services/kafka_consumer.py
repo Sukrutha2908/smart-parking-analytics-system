@@ -1,5 +1,6 @@
 from kafka import KafkaConsumer
 import json
+from app.websocket_manager import manager
 
 from app.mongodb import slot_collection
 
@@ -34,6 +35,12 @@ for message in consumer:
                 "status": status
             }
         }
+    )
+
+    import asyncio
+    
+    asyncio.run(
+        manager.broadcast(data)
     )
 
     print(

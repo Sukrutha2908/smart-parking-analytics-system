@@ -247,33 +247,15 @@
 
       </div>
 
-      <!-- REVENUE TREND -->
+      <!-- =========================
+           ANALYTICS LAYOUT
+      ========================== -->
 
-      <div class="card revenue-card">
-
-        <div class="card-header">
-
-          <h2>
-            Revenue Trend
-          </h2>
-
-        </div>
-
-        <div class="chart-box">
-
-          <canvas id="revenueChart"></canvas>
-
-        </div>
-
-      </div>
-
-      <!-- ANALYTICS -->
-
-      <div class="analytics-grid">
+      <div class="analytics-layout">
 
         <!-- OCCUPANCY OVERVIEW -->
 
-        <div class="analytics-card">
+        <div class="analytics-card large-card">
 
           <h3>
             Occupancy Overview
@@ -286,82 +268,104 @@
 
         </div>
 
-        <!-- VEHICLE DISTRIBUTION -->
+        <!-- BOTTOM CHARTS -->
 
-        <div class="analytics-card">
+        <div class="bottom-charts">
 
-          <h3>
-            Vehicle Distribution
-          </h3>
+          <!-- REVENUE TREND -->
 
-          <div class="vehicle-stats">
+          <div class="analytics-card small-card">
 
-            <!-- Cars -->
+            <h3>
+              Revenue Trend
+            </h3>
 
-            <div class="vehicle-row">
+            <div class="chart-box">
 
-              <span>
-                Cars
-              </span>
-
-              <strong>
-                60%
-              </strong>
+              <canvas id="revenueChart"></canvas>
 
             </div>
 
-            <div class="vehicle-bar">
+          </div>
 
-              <div
-                class="vehicle-fill blue"
-                style="width:60%"
-              ></div>
+          <!-- VEHICLE DISTRIBUTION -->
 
-            </div>
+          <div class="analytics-card small-card">
 
-            <!-- Bikes -->
+            <h3>
+              Vehicle Distribution
+            </h3>
 
-            <div class="vehicle-row">
+            <div class="vehicle-stats">
 
-              <span>
-                Bikes
-              </span>
+              <!-- Cars -->
 
-              <strong>
-                30%
-              </strong>
+              <div class="vehicle-row">
 
-            </div>
+                <span>
+                  Cars
+                </span>
 
-            <div class="vehicle-bar">
+                <strong>
+                  60%
+                </strong>
 
-              <div
-                class="vehicle-fill green"
-                style="width:30%"
-              ></div>
+              </div>
 
-            </div>
+              <div class="vehicle-bar">
 
-            <!-- Trucks -->
+                <div
+                  class="vehicle-fill blue"
+                  style="width:60%"
+                ></div>
 
-            <div class="vehicle-row">
+              </div>
 
-              <span>
-                Trucks
-              </span>
+              <!-- Bikes -->
 
-              <strong>
-                10%
-              </strong>
+              <div class="vehicle-row">
 
-            </div>
+                <span>
+                  Bikes
+                </span>
 
-            <div class="vehicle-bar">
+                <strong>
+                  30%
+                </strong>
 
-              <div
-                class="vehicle-fill orange"
-                style="width:10%"
-              ></div>
+              </div>
+
+              <div class="vehicle-bar">
+
+                <div
+                  class="vehicle-fill green"
+                  style="width:30%"
+                ></div>
+
+              </div>
+
+              <!-- Trucks -->
+
+              <div class="vehicle-row">
+
+                <span>
+                  Trucks
+                </span>
+
+                <strong>
+                  10%
+                </strong>
+
+              </div>
+
+              <div class="vehicle-bar">
+
+                <div
+                  class="vehicle-fill orange"
+                  style="width:10%"
+                ></div>
+
+              </div>
 
             </div>
 
