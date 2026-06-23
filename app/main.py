@@ -375,7 +375,10 @@ def vehicle_exit(body: VehicleIn):
             {
                 "$set": {
                     "exit_time": exit_time,
-                    "fee": fee
+                    "fee": fee,
+
+                    "duration_minutes":
+                        round(hours * 60)
                 }
             }
         )
@@ -503,7 +506,11 @@ def get_logs(page: int = 1, limit: int = 50):
 
                 "floor": d.get("floor"),
 
-                "status": d.get("status"),
+                "status": (
+                    "exited"
+                    if d.get("exit_time")
+                    else "occupied"
+                ),
 
                 "entry_time": (
                     d["entry_time"].isoformat()
@@ -517,7 +524,13 @@ def get_logs(page: int = 1, limit: int = 50):
                     else None
                 ),
 
-                "fee": d.get("fee")
+                "fee": d.get("fee"),
+
+                "duration": (
+                    f"{round(d.get('duration_minutes', 0))} mins"
+                    if d.get("duration_minutes")
+                    else "-"
+                ),
 
             })
 

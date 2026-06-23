@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 
 from app.models.billing_model import BillingModel
+from app.mongodb import billing_collection
 
 router = APIRouter(
     prefix="/billing",
@@ -45,74 +46,82 @@ def create_bill(bill: BillingModel):
 def get_bills():
 
     try:
-        # Example dummy data
-        bills = []
 
-        # Replace with MongoDB fetch later
-        # bills = list(billing_collection.find({}, {"_id": 0}))
+        bills = list(
+            billing_collection.find()
+        )
 
-        if not bills:
-            raise HTTPException(
-                status_code=404,
-                detail="No Billing Records Found"
+        for bill in bills:
+
+            bill["_id"] = str(
+                bill["_id"]
             )
 
-        return {
-            "count": len(bills),
-            "data": bills
-        }
-
-    except HTTPException as e:
-        raise e
+        return bills
 
     except PyMongoError as e:
+
         raise HTTPException(
+
             status_code=500,
+
             detail=f"Database Error: {str(e)}"
         )
 
     except Exception as e:
+
         raise HTTPException(
+
             status_code=500,
+
             detail=f"Unexpected Error: {str(e)}"
         )
-
-
-# Get Bill By Vehicle ID
-@router.get("/{vehicle_id}")
-def get_bill(vehicle_id: int):
+    
+    
+    # Get Bill By Vehicle ID
+@router.get("/{vehicle_number}")
+def get_bill(vehicle_number: str):
 
     try:
-        # Example dummy data
-        bill = None
 
-        # Replace with MongoDB query later
-        # bill = billing_collection.find_one(
-        #     {"vehicle_id": vehicle_id},
-        #     {"_id": 0}
-        # )
+        bill = billing_collection.find_one({
+
+            "vehicle_number": vehicle_number
+        })
 
         if not bill:
+
             raise HTTPException(
+
                 status_code=404,
-                detail=f"No Bill Found for Vehicle ID {vehicle_id}"
+
+                detail=f"No Bill Found for {vehicle_number}"
             )
 
-        return {
-            "data": bill
-        }
+        bill["_id"] = str(
+            bill["_id"]
+        )
+
+        return bill
 
     except HTTPException as e:
+
         raise e
 
     except PyMongoError as e:
+
         raise HTTPException(
+
             status_code=500,
+
             detail=f"Database Error: {str(e)}"
         )
 
     except Exception as e:
+
         raise HTTPException(
+
             status_code=500,
+
             detail=f"Unexpected Error: {str(e)}"
         )

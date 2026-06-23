@@ -181,8 +181,41 @@ function renderSlots() {
     if (!grid) return;
 
     grid.innerHTML = '';
+    
+    const floorFilter =
+        document.getElementById('floorFilter')?.value;
 
-    allSlots.forEach(slot => {
+    const statusFilter =
+        document.getElementById('statusFilter')?.value;
+
+    let filteredSlots =
+        allSlots;
+        
+    if (
+        floorFilter &&
+        floorFilter !== 'all'
+    ) {
+
+        filteredSlots =
+            filteredSlots.filter(
+                slot =>
+                    slot.floor === floorFilter
+            );
+    }
+
+    if (
+        statusFilter &&
+        statusFilter !== 'all'
+    ) {
+
+        filteredSlots =
+            filteredSlots.filter(
+                slot =>
+                    slot.status === statusFilter
+            );
+    }
+
+    filteredSlots.forEach(slot => {
 
         grid.innerHTML += `
 
@@ -421,73 +454,46 @@ async function loadFloorOccupancy() {
    VEHICLE DISTRIBUTION
 ========================================= */
 
-function loadVehicleDistribution() {
+async function loadVehicleDistribution(){
 
-    const container =
-        document.getElementById(
-            'vehicleDistribution'
-        );
+    const response = await fetch(
+        "http://127.0.0.1:8000/analytics/vehicle-distribution"
+    );
 
-    if (!container) return;
+    const data = await response.json();
 
-    container.innerHTML = `
+    const total = data.total || 1;
 
-        <div class="vehicle-stats">
+    const carPercent =
+        (data.cars / total) * 100;
 
-            <div class="vehicle-row">
+    const bikePercent =
+        (data.bikes / total) * 100;
 
-                <span>Cars</span>
+    const truckPercent =
+        (data.trucks / total) * 100;
 
-                <strong>60%</strong>
+    document.getElementById("carBar")
+        .style.width = `${carPercent}%`;
 
-            </div>
+    document.getElementById("bikeBar")
+        .style.width = `${bikePercent}%`;
 
-            <div class="vehicle-bar">
+    document.getElementById("truckBar")
+        .style.width = `${truckPercent}%`;
 
-                <div
-                    class="vehicle-fill blue"
-                    style="width:60%"
-                ></div>
+    document.getElementById("carPercent")
+        .innerText = `${carPercent.toFixed(0)}%`;
 
-            </div>
+    document.getElementById("bikePercent")
+        .innerText = `${bikePercent.toFixed(0)}%`;
 
-            <div class="vehicle-row">
-
-                <span>Bikes</span>
-
-                <strong>30%</strong>
-
-            </div>
-
-            <div class="vehicle-bar">
-
-                <div
-                    class="vehicle-fill green"
-                    style="width:30%"
-                ></div>
-
-            </div>
-
-            <div class="vehicle-row">
-
-                <span>Trucks</span>
-
-                <strong>10%</strong>
-
-            </div>
-
-            <div class="vehicle-bar">
-
-                <div
-                    class="vehicle-fill orange"
-                    style="width:10%"
-                ></div>
-
-            </div>
-
-        </div>
-    `;
+    document.getElementById("truckPercent")
+        .innerText = `${truckPercent.toFixed(0)}%`;
 }
+
+loadVehicleDistribution();
+
 
 /* =========================================
    ENTRY
@@ -619,12 +625,20 @@ async function loadLogs(page = 1) {
 
             <tr>
 
-                <td>${log.vehicle_number}</td>
-
-                <td>${log.slot_id}</td>
+                <td>
+                    ${log.vehicle_number || '-'}
+                </td>
 
                 <td>
-                    ${formatTime(log.entry_time)}
+                    ${log.slot_id || '-'}
+                </td>
+
+                <td>
+                    ${
+                        log.entry_time
+                        ? formatTime(log.entry_time)
+                        : '-'
+                    }
                 </td>
 
                 <td>
@@ -636,11 +650,22 @@ async function loadLogs(page = 1) {
                 </td>
 
                 <td>
-                    ${
-                        log.exit_time
-                        ? 'Exited'
-                        : 'Parked'
-                    }
+                    ${log.duration || '-'}
+                </td>
+
+                <td>
+                    ₹${log.fee || 0}
+                </td>
+
+                <td>
+
+                    <span class="
+                        status
+                        ${log.status}
+                    ">
+                        ${log.status || 'occupied'}
+                    </span>
+
                 </td>
 
             </tr>
@@ -714,6 +739,8 @@ socket.onmessage = async (event) => {
     await loadSummary();
 
     await loadFloorOccupancy();
+
+        loadVehicleDistribution();
 };
 
 /* =========================================
@@ -743,6 +770,20 @@ if (dateBox) {
    WINDOW LOAD
 ========================================= */
 
+document
+    .getElementById('floorFilter')
+    ?.addEventListener(
+        'change',
+        renderSlots
+    );
+
+document
+    .getElementById('statusFilter')
+    ?.addEventListener(
+        'change',
+        renderSlots
+    );
+
 window.onload = async () => {
 
     await loadDashboardData();
@@ -750,4 +791,11 @@ window.onload = async () => {
     await loadSlots();
 
     await loadLogs();
+
+    await loadRevenueChart();
+
+    await loadFloorOccupancy();
+
+     loadVehicleDistribution(); 
+
 };

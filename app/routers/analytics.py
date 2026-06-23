@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 
+from app.mongodb import slot_collection
+
 from app.mongodb import (
     parking_collection,
     billing_collection,
@@ -71,8 +73,8 @@ def revenue():
 
                     "_id": {
                         "$dateToString": {
-                            "format": "%Y-%m-%d",
-                            "date": "$transaction_time"
+                            "format": "%H:%M",
+                            "date": "$billing_time"
                         }
                     },
 
@@ -90,15 +92,8 @@ def revenue():
         ]
 
         result = list(
-            transaction_collection.aggregate(pipeline)
+            billing_collection.aggregate(pipeline)
         )
-
-        if not result:
-
-            raise HTTPException(
-                status_code=404,
-                detail="No Revenue Data Found"
-            )
 
         revenue_data = []
 
@@ -113,23 +108,12 @@ def revenue():
 
         return revenue_data
 
-    except HTTPException as e:
-        raise e
-
-    except PyMongoError as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=f"Database Error: {str(e)}"
-        )
-
     except Exception as e:
 
-        raise HTTPException(
-            status_code=500,
-            detail=f"Unexpected Error: {str(e)}"
-        )
-
+        return {
+            "error": str(e)
+        }
+    
 # Peak Hour Analytics
 @router.get("/peak-hours")
 def peak_hours():
@@ -206,3 +190,38 @@ def vehicle_count():
             status_code=500,
             detail=f"Unexpected Error: {str(e)}"
         )
+
+@router.get("/vehicle-distribution")
+async def vehicle_distribution():
+
+    total = slot_collection.count_documents(
+        {"status": "occupied"}
+    )
+
+    cars = slot_collection.count_documents(
+        {
+            "status": "occupied",
+            "vehicle_type": "Car"
+        }
+    )
+
+    bikes = slot_collection.count_documents(
+        {
+            "status": "occupied",
+            "vehicle_type": "Bike"
+        }
+    )
+
+    trucks = slot_collection.count_documents(
+        {
+            "status": "occupied",
+            "vehicle_type": "Truck"
+        }
+    )
+
+    return {
+        "cars": cars,
+        "bikes": bikes,
+        "trucks": trucks,
+        "total": total
+    }

@@ -219,6 +219,10 @@ nav {
   flex-direction: column;
 
   gap: 24px;
+
+  width: 100%;
+
+  overflow-x: hidden;
 }
 
 /* =========================
@@ -245,9 +249,13 @@ nav {
 
 .top-header h1 {
 
-  font-size: 42px;
+  font-size: 48px;
 
   margin-bottom: 8px;
+
+  line-height: 1.1;
+
+  word-break: break-word;
 }
 
 .top-header p {

@@ -31,11 +31,37 @@ while True:
 
         new_status = "free"
 
+    # Vehicle Type Based on Floor
+
+    if slot["floor"] == "B1":
+
+        vehicle_type = "Truck"
+
+    elif slot["floor"] == "B2":
+
+        vehicle_type = "Truck"
+
+    elif slot["floor"] == "L1":
+
+        vehicle_type = "Car"
+
+    else:
+
+        vehicle_type = "Bike"
+
     event = {
 
         "slot_id": slot["slot_id"],
 
-        "status": new_status
+        "status": new_status,
+
+        "vehicle_number":
+            f"AP39{random.randint(1000,9999)}",
+
+        "vehicle_type": vehicle_type,
+
+        "entry_time":
+            time.time()
     }
 
     producer.send(
