@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.models.slot_model import SlotModel
 
+from app.mongodb import slots_collection
 router = APIRouter(
     prefix="/slots",
     tags=["Slots"]
@@ -12,7 +13,7 @@ def create_slot(slot: SlotModel):
 
     try:
 
-        slot_dict = slot.dict()
+        slot_dict = slot.model_dump()
 
         return {
             "message": "Slot Created Successfully",
