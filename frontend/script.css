@@ -19,7 +19,7 @@ body {
     Arial,
     sans-serif;
 
-  background: #f5f7fb;
+  background: var(--bg);
 
   color: #111827;
 
@@ -36,23 +36,23 @@ body {
 
 :root {
 
-  --green: #0b8f6a;
+  --primary-dark: #093C5D;
+  --primary-blue: #3B7597;
+  --accent-cyan: #6FD1D7;
+  --accent-green: #5DF8D8;
 
-  --green-light: #dff5ec;
-
-  --red: #d85a30;
-
-  --blue: #378add;
-
-  --bg: #f5f7fb;
-
+  --bg: #f4f8fb;
   --card: #ffffff;
+  --border: #d9e4ec;
+  --muted: #5f6f7f;
 
-  --border: #e5e7eb;
+  --green: #5DF8D8;
+  --green-light: #dffcf8;
 
-  --muted: #6b7280;
+  --red: #ff7a59;
+
+  --blue: #3B7597;
 }
-
 /* =========================
    SIDEBAR
 ========================= */
@@ -61,7 +61,8 @@ body {
 
   width: 260px;
 
-  background: white;
+  background: var(--primary-dark);
+  color: white;
 
   border-right: 1px solid var(--border);
 
@@ -128,7 +129,7 @@ body {
 
 .brand-sub {
 
-  color: var(--muted);
+  color: #c7d7e2;
 
   font-size: 13px;
 
@@ -168,19 +169,19 @@ nav {
 }
 
 .nav-item:hover {
-
-  background: #f3f4f6;
+  background: rgba(255,255,255,0.08);
+  color: white;
 }
 
 .nav-item.active {
 
-  background: var(--green-light);
+  background: var(--accent-cyan);
 
-  color: var(--green);
+  color: var(--primary-dark);
 
   font-weight: 700;
 
-  border-left: 5px solid var(--green);
+  border-left: 5px solid var(--accent-green);
 }
 
 /* =========================
@@ -231,7 +232,13 @@ nav {
 
 .top-header {
 
-  background: white;
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark),
+    var(--primary-blue)
+  );
+
+  color: white;
 
   border-radius: 24px;
 
@@ -245,6 +252,10 @@ nav {
 
   box-shadow:
     0 4px 12px rgba(0,0,0,0.05);
+}
+
+.top-header p {
+  color: #d6e6ef;
 }
 
 .top-header h1 {
@@ -307,8 +318,7 @@ nav {
 .stat-card {
 
   background: white;
-
-  border-radius: 24px;
+  border-top: 5px solid var(--accent-cyan);
 
   padding: 28px;
 
@@ -385,7 +395,7 @@ nav {
 
   margin-bottom: 24px;
 
-  color: var(--green);
+  color: var(--primary-dark);
 }
 
 /* =========================
@@ -554,7 +564,8 @@ th {
 
   padding: 16px;
 
-  background: #f3f4f6;
+  background: #edf7fb;
+  color: var(--primary-dark);
 }
 
 td {
@@ -622,17 +633,13 @@ td {
 }
 
 .slot.free {
-
-  background: #eafaf4;
-
-  border-color: #10b981;
+  background: #e8fffb;
+  border-color: var(--accent-green);
 }
 
 .slot.occupied {
-
-  background: #fff1eb;
-
-  border-color: #f97316;
+  background: #eef6fb;
+  border-color: var(--primary-dark);
 }
 
 /* =========================
@@ -680,10 +687,18 @@ select {
 }
 
 .btn.primary {
-
-  background: var(--green);
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue),
+    var(--accent-cyan)
+  );
 
   color: white;
+}
+
+.btn.primary:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
 }
 
 .btn.danger {
@@ -851,7 +866,11 @@ select {
 
 .floor-item {
 
-    background: #f9fafb;
+    background: linear-gradient(
+      180deg,
+      #ffffff,
+      #f2fbff
+    );
 
     border-radius: 20px;
 
