@@ -10,10 +10,15 @@ from pydantic import BaseModel
 from fastapi import WebSocket
 from app.websocket_manager import manager
 
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+
 from datetime import datetime
 from uuid import uuid4
 
 import os
+
+from app.routers.analytics import router as analytics_router
 
 # ─────────────────────────────────────────────
 # Import Routers
@@ -36,6 +41,12 @@ app = FastAPI(
     version="1.0.0",
     description="Real-Time Smart Parking Management System"
 )
+
+templates = Jinja2Templates(
+    directory="templates"
+)
+
+app.include_router(analytics_router)
 
 @app.websocket("/ws")
 
@@ -84,8 +95,15 @@ app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 # ─────────────────────────────────────────────
 
 @app.get("/")
-def home():
-    return FileResponse("frontend/index.html")
+async def home(request: Request):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "title": "Smart Parking Dashboard"
+        }
+    )
 
 
 app.mount(
@@ -368,7 +386,9 @@ def vehicle_exit(body: VehicleIn):
 
         hours = max(duration_seconds / 3600, 0.25)
 
-        fee = round(hours * RATE_PER_HOUR, 2)
+        duration_minutes = round(hours * 60)
+
+        fee = round(duration_minutes / 60 * 20)
 
         logs_col.update_one(
             {"_id": log["_id"]},
@@ -479,14 +499,42 @@ def vehicle_exit(body: VehicleIn):
 # ─────────────────────────────────────────────
 
 @app.get("/logs")
-def get_logs(page: int = 1, limit: int = 50):
+def get_logs(
+    page: int = 1,
+    limit: int = 50,
+    vehicle_number: str = None,
+    status: str = None
+):
 
     try:
 
         skip = (page - 1) * limit
 
+        query = {}
+
+        # Vehicle Search
+        if vehicle_number:
+
+            query["vehicle_number"] = {
+                "$regex": vehicle_number,
+                "$options": "i"
+            }
+
+        # Status Filter
+        if status:
+
+            if status == "occupied":
+
+                query["exit_time"] = None
+
+            elif status == "exited":
+
+                query["exit_time"] = {
+                    "$ne": None
+                }
+
         docs = list(
-            logs_col.find({}, {"_id": 0})
+            logs_col.find(query, {"_id": 0})
             .sort("entry_time", -1)
             .skip(skip)
             .limit(limit)
@@ -498,54 +546,57 @@ def get_logs(page: int = 1, limit: int = 50):
 
             results.append({
 
-                "vehicle_number": d.get("vehicle_number"),
+                "vehicle_number":
+                    d.get("vehicle_number"),
 
-                "slot_id": d.get("slot_id"),
+                "slot_id":
+                    d.get("slot_id"),
 
-                "slot_number": d.get("slot_number"),
+                "floor":
+                    d.get("floor"),
 
-                "floor": d.get("floor"),
-
-                "status": (
+                "status":
                     "exited"
                     if d.get("exit_time")
-                    else "occupied"
-                ),
+                    else "occupied",
 
-                "entry_time": (
+                "entry_time":
                     d["entry_time"].isoformat()
                     if d.get("entry_time")
-                    else None
-                ),
+                    else None,
 
-                "exit_time": (
+                "exit_time":
                     d["exit_time"].isoformat()
                     if d.get("exit_time")
-                    else None
-                ),
+                    else None,
 
-                "fee": d.get("fee"),
+                "fee":
+                    d.get("fee"),
 
-                "duration": (
+                "duration":
                     f"{round(d.get('duration_minutes', 0))} mins"
                     if d.get("duration_minutes")
                     else "-"
-                ),
-
             })
+
+        total = logs_col.count_documents(query)
 
         return {
 
             "logs": results,
 
-            "total": logs_col.count_documents({})
+            "total": total,
 
+            "page": page,
+
+            "limit": limit,
+
+            "total_pages":
+                (total + limit - 1) // limit
         }
 
     except Exception as e:
 
         return {
-
             "error": str(e)
-
         }

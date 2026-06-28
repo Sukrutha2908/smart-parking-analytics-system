@@ -239,31 +239,33 @@ function renderSlots() {
    REVENUE CHART
 ========================================= */
 
-async function loadRevenueChart() {
+async function loadRevenueChart(filter = "current") {
 
     try {
 
         const response =
             await fetch(
-                'http://127.0.0.1:8000/analytics/revenue'
+                `http://127.0.0.1:8000/analytics/weekly-revenue?filter=${filter}`
             );
 
         const data =
             await response.json();
 
-        const labels =
-            data.map(d => d.date);
+        console.log("Revenue Data:", data);
 
-        const revenues =
-            data.map(d => d.revenue);
+        const labels = data.labels;
+
+        const values = data.values;
 
         const canvas =
-            document.getElementById('revenueChart');
+            document.getElementById(
+                "revenueChart"
+            );
 
         if (!canvas) return;
 
         const ctx =
-            canvas.getContext('2d');
+            canvas.getContext("2d");
 
         if (window.revenueChartInstance) {
 
@@ -273,7 +275,7 @@ async function loadRevenueChart() {
         window.revenueChartInstance =
             new Chart(ctx, {
 
-                type: 'line',
+                type: "line",
 
                 data: {
 
@@ -281,20 +283,25 @@ async function loadRevenueChart() {
 
                     datasets: [{
 
-                        label: 'Revenue',
+                        label: "Weekly Revenue",
 
-                        data: revenues,
+                        data: values,
 
-                        borderColor: '#10b981',
+                        borderColor: "#28C7A1",
 
                         backgroundColor:
-                            'rgba(16,185,129,0.15)',
+                            "rgba(93,248,216,0.18)",
 
                         fill: true,
 
                         tension: 0.4,
 
-                        borderWidth: 3
+                        borderWidth: 3,
+
+                        pointBackgroundColor:
+                            "#28C7A1",
+
+                        pointRadius: 5
                     }]
                 },
 
@@ -302,14 +309,22 @@ async function loadRevenueChart() {
 
                     responsive: true,
 
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true
+                        }
+                    }
                 }
             });
 
     } catch (error) {
 
         console.error(
-            'Revenue chart error',
+            "Revenue chart error:",
             error
         );
     }
@@ -799,3 +814,10 @@ window.onload = async () => {
      loadVehicleDistribution(); 
 
 };
+
+document
+    .getElementById("weekFilter")
+    .addEventListener("change", async function () {
+
+        await loadRevenueChart(this.value);
+    });
