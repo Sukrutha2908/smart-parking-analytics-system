@@ -1,674 +1,801 @@
 'use strict';
 
+/* =========================================
+   API
+========================================= */
+
 const API_BASE = '';
 
 let allSlots = [];
+
 let dashPage = 1;
+
 const PER_PAGE = 200;
 
-// ── Navigation ────────────────────────────────────────────────────────────────
+/* =========================================
+   NAVIGATION
+========================================= */
 
 document.querySelectorAll('.nav-item').forEach(btn => {
 
-  btn.addEventListener('click', () => {
+    btn.addEventListener('click', () => {
 
-    document.querySelectorAll('.nav-item')
-      .forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.nav-item')
+            .forEach(b => b.classList.remove('active'));
 
-    document.querySelectorAll('.view')
-      .forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.view')
+            .forEach(v => v.classList.remove('active'));
 
-    btn.classList.add('active');
+        btn.classList.add('active');
 
-    const view = btn.dataset.view;
+        const view = btn.dataset.view;
 
-    document.getElementById('view-' + view)
-      .classList.add('active');
+        document
+            .getElementById('view-' + view)
+            .classList.add('active');
 
-    clearAlert();
+        if (view === 'dashboard') {
 
-    if (view === 'dashboard') {
+            loadDashboardData();
+        }
 
-      dashPage = 1;
-      loadDashboard();
-    }
+        if (view === 'slots') {
 
-    if (view === 'logs') {
+            loadSlots();
+        }
 
-      loadLogs(1);
-    }
-  });
+        if (view === 'logs') {
+
+            loadLogs(1);
+        }
+    });
 });
 
-// ── Alert ─────────────────────────────────────────────────────────────────────
+/* =========================================
+   ALERTS
+========================================= */
 
-function showAlert(msg, type) {
+function showAlert(message, type = 'success') {
 
-  const box = document.getElementById('alertBox');
+    const box =
+        document.getElementById('alertBox');
 
-  box.textContent = msg;
+    if (!box) return;
 
-  box.className = 'alert ' + type;
+    box.textContent = message;
 
-  setTimeout(() => clearAlert(), 5000);
+    box.className = `alert ${type}`;
+
+    box.classList.remove('hidden');
+
+    setTimeout(() => {
+
+        box.classList.add('hidden');
+
+    }, 3000);
 }
 
-function clearAlert() {
-
-  document.getElementById('alertBox')
-    .className = 'alert hidden';
-}
-
-// ── API Helper ────────────────────────────────────────────────────────────────
+/* =========================================
+   API HELPER
+========================================= */
 
 async function api(path, options = {}) {
 
-  try {
+    try {
 
-    const res = await fetch(API_BASE + path, {
+        const response = await fetch(
+            API_BASE + path,
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                ...options
+            }
+        );
 
-      headers: {
-        'Content-Type': 'application/json'
-      },
+        const data = await response.json();
 
-      ...options
-    });
+        return {
+            ok: response.ok,
+            data
+        };
 
-    const data = await res.json();
+    } catch (error) {
 
-    document.getElementById('apiBanner')
-      .classList.add('hidden');
+        console.error(error);
 
-    return {
-      ok: res.ok,
-      status: res.status,
-      data
-    };
-
-  } catch (e) {
-
-    document.getElementById('apiBanner')
-      .classList.remove('hidden');
-
-    return {
-      ok: false,
-      status: 0,
-      data: {
-        detail: 'Cannot reach server.'
-      }
-    };
-  }
+        return {
+            ok: false,
+            data: null
+        };
+    }
 }
 
-// ── Dashboard Summary ─────────────────────────────────────────────────────────
+/* =========================================
+   SUMMARY
+========================================= */
 
 async function loadSummary() {
 
-  const { ok, data } = await api('/slots/summary');
+    const { ok, data } =
+        await api('/slots/summary');
 
-  if (!ok) return;
+    if (!ok) return;
 
-  document.getElementById('statTotal').textContent = data.total;
+    document.getElementById('statTotal').textContent =
+        data.total || 0;
 
-  document.getElementById('statFree').textContent = data.free;
+    document.getElementById('statFree').textContent =
+        data.free || 0;
 
-  document.getElementById('statOcc').textContent = data.occupied;
+    document.getElementById('statOcc').textContent =
+        data.occupied || 0;
 
-  document.getElementById('statPct').textContent =
-    ((data.occupied / data.total) * 100).toFixed(1) + '%';
+    const occupancy =
+        ((data.occupied / data.total) * 100).toFixed(1);
+
+    document.getElementById('statPct').textContent =
+        occupancy + '%';
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+/* =========================================
+   LOAD DASHBOARD
+========================================= */
 
-async function loadDashboard() {
+async function loadDashboardData() {
 
-  await loadSummary();
+    await loadSummary();
 
-  const { ok, data } = await api('/slots');
+    await loadRevenueChart();
 
-  if (!ok) return;
+    await loadFloorOccupancy();
 
-  allSlots = data;
-
-  renderSlots();
+    loadVehicleDistribution();
 }
+
+/* =========================================
+   LOAD SLOTS
+========================================= */
+
+async function loadSlots() {
+
+    const { ok, data } =
+        await api('/slots');
+
+    if (!ok) return;
+
+    allSlots = data;
+
+    renderSlots();
+}
+
+/* =========================================
+   RENDER SLOTS
+========================================= */
 
 function renderSlots() {
 
-  const sf = document.getElementById('filterStatus').value;
+    const grid =
+        document.getElementById('slotGrid');
 
-  const nf = (
-    document.getElementById('filterSlot').value || ''
-  ).trim().toUpperCase();
+    if (!grid) return;
 
-  let list = allSlots;
+    grid.innerHTML = '';
+    
+    const floorFilter =
+        document.getElementById('floorFilter')?.value;
 
-  if (sf !== 'all') {
+    const statusFilter =
+        document.getElementById('statusFilter')?.value;
 
-    list = list.filter(s => s.status === sf);
-  }
+    let filteredSlots =
+        allSlots;
+        
+    if (
+        floorFilter &&
+        floorFilter !== 'all'
+    ) {
 
-  if (nf) {
-
-    list = list.filter(s =>
-      s.slot_id.startsWith(nf)
-    );
-  }
-
-  const pages = Math.max(
-    1,
-    Math.ceil(list.length / PER_PAGE)
-  );
-
-  if (dashPage > pages) {
-
-    dashPage = pages;
-  }
-
-  const paged = list.slice(
-    (dashPage - 1) * PER_PAGE,
-    dashPage * PER_PAGE
-  );
-
-  document.getElementById('slotGrid').innerHTML = paged.length
-
-    ? paged.map(s => `
-
-      <div class="slot ${s.status}"
-
-        onclick="${
-          s.status === 'free'
-            ? `quickPark('${s.slot_id}')`
-            : ''
-        }">
-
-        <div class="slot-num">
-          ${s.slot_id}
-        </div>
-
-        <div class="slot-floor">
-          ${s.floor}
-        </div>
-
-        <div class="slot-status">
-          ${s.status.charAt(0).toUpperCase() + s.status.slice(1)}
-        </div>
-
-      </div>
-
-    `).join('')
-
-    : `
-      <p style="color:var(--muted);padding:1rem">
-        No slots match.
-      </p>
-    `;
-
-  buildPagination(
-    'dashPagination',
-    pages,
-    dashPage,
-    p => {
-      dashPage = p;
-      renderSlots();
+        filteredSlots =
+            filteredSlots.filter(
+                slot =>
+                    slot.floor === floorFilter
+            );
     }
-  );
-}
 
-// ── Quick Park ────────────────────────────────────────────────────────────────
-
-async function quickPark(slotId) {
-
-  const veh = prompt(
-    `Park in slot ${slotId} — enter vehicle number:`
-  );
-
-  if (!veh || !veh.trim()) return;
-
-  const { ok, data } = await api('/entry', {
-
-    method: 'POST',
-
-    body: JSON.stringify({
-      vehicle_number: veh.trim().toUpperCase()
-    })
-  });
-
-  showAlert(
-    ok ? data.message : (data.detail || 'Error'),
-    ok ? 'success' : 'error'
-  );
-
-  if (ok) {
-
-    loadDashboard();
-  }
-}
-
-// ── Vehicle Entry ─────────────────────────────────────────────────────────────
-
-async function registerEntry() {
-
-  const num = document.getElementById('vehicleNum')
-    .value
-    .trim()
-    .toUpperCase();
-
-  const box = document.getElementById('entryResult');
-
-  if (!num) {
-
-    showResult(
-      box,
-      'Enter a vehicle number.',
-      false
-    );
-
-    return;
-  }
-
-  const { ok, data } = await api('/entry', {
-
-    method: 'POST',
-
-    body: JSON.stringify({
-      vehicle_number: num
-    })
-  });
-
-  showResult(
-
-    box,
-
-    ok
-      ? `✅ ${data.message} | Slot: ${data.slot_id} (${data.floor})`
-      : `❌ ${data.detail || 'Error'}`,
-
-    ok
-  );
-
-  if (ok) {
-
-    document.getElementById('vehicleNum').value = '';
-
-    loadSummary();
-  }
-}
-
-function showResult(box, msg, ok) {
-
-  box.className =
-    'result-box ' + (ok ? 'success' : 'error');
-
-  box.textContent = msg;
-}
-
-// ── Vehicle Exit ──────────────────────────────────────────────────────────────
-
-async function processExit() {
-
-  const num = document.getElementById('exitVehicleNum')
-    .value
-    .trim()
-    .toUpperCase();
-
-  const bill = document.getElementById('billCard');
-
-  if (!num) {
-
-    showAlert(
-      'Enter a vehicle number.',
-      'error'
-    );
-
-    return;
-  }
-
-  const { ok, data } = await api('/exit', {
-
-    method: 'POST',
-
-    body: JSON.stringify({
-      vehicle_number: num
-    })
-  });
-
-  if (!ok) {
-
-    showAlert(
-      data.detail || 'Error',
-      'error'
-    );
-
-    bill.classList.add('hidden');
-
-    return;
-  }
-
-  document.getElementById('exitVehicleNum').value = '';
-
-  showAlert(data.message, 'success');
-
-  loadSummary();
-
-  bill.classList.remove('hidden');
-
-  bill.innerHTML = `
-
-    <h3 class="bill-title">
-      Billing Summary
-    </h3>
-
-    <div class="bill-grid">
-
-      <div class="bill-row">
-        <span class="bill-label">Vehicle</span>
-        <span class="bill-value">${data.vehicle_number}</span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Slot</span>
-        <span class="bill-value">
-          ${data.slot_id} (${data.floor})
-        </span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Entry</span>
-        <span class="bill-value">
-          ${formatTime(data.entry_time)}
-        </span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Exit</span>
-        <span class="bill-value">
-          ${formatTime(data.exit_time)}
-        </span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Total Time</span>
-
-        <span class="bill-value">
-
-          ${
-            data.duration_minutes < 60
-
-              ? `${data.duration_minutes} Minutes`
-
-              : `${Math.floor(data.duration_minutes / 60)}h ${data.duration_minutes % 60}m`
-          }
-
-        </span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Rate</span>
-        <span class="bill-value">₹20 / hr</span>
-      </div>
-
-      <div class="bill-row">
-        <span class="bill-label">Total Fee</span>
-        <span class="bill-value">₹${data.fee}</span>
-      </div>
-
-    </div>
-  `;
-}
-
-// ── Logs ──────────────────────────────────────────────────────────────────────
-
-async function loadLogs(page) {
-
-  const status =
-    document.getElementById('logStatus').value;
-
-  const qs =
-    `?page=${page}&limit=50${
-      status ? '&status=' + status : ''
-    }`;
-
-  const { ok, data } = await api('/logs' + qs);
-
-  if (!ok) return;
-
-  const tbody = document.getElementById('logsBody');
-
-  if (!data.logs.length) {
-
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty">
-          No records found.
-        </td>
-      </tr>
-    `;
-
-    document.getElementById('logPagination').innerHTML = '';
-
-    return;
-  }
-
-  tbody.innerHTML = data.logs.map(l => {
-
-    const dur = l.fee != null
-      ? calcDur(l.entry_time, l.exit_time)
-      : '—';
-
-    return `
-
-      <tr>
-
-        <td>
-          <strong>${l.vehicle_number}</strong>
-        </td>
-
-        <td>
-          ${l.slot_id} (${l.floor})
-        </td>
-
-        <td>
-          ${formatTime(l.entry_time)}
-        </td>
-
-        <td>
-          ${l.exit_time
-            ? formatTime(l.exit_time)
-            : '—'}
-        </td>
-
-        <td>${dur}</td>
-
-        <td>
-          ${l.fee != null
-            ? '₹' + l.fee
-            : '—'}
-        </td>
-
-        <td>
-
-          <span class="badge ${
-            l.exit_time
-              ? 'done'
-              : 'active'
-          }">
-
-            ${
-              l.exit_time
-                ? 'Exited'
-                : 'Parked'
-            }
-
-          </span>
-
-        </td>
-
-      </tr>
-    `;
-
-  }).join('');
-
-  const pages = Math.ceil(data.total / 50);
-
-  buildPagination(
-    'logPagination',
-    pages,
-    page,
-    p => loadLogs(p)
-  );
-}
-
-// ── Cleanup Logs ──────────────────────────────────────────────────────────────
-
-async function cleanupLogs() {
-
-  if (!confirm(
-    'Delete all completed parking logs?'
-  )) return;
-
-  const { ok, data } = await api(
-    '/logs/cleanup',
-    {
-      method: 'DELETE'
+    if (
+        statusFilter &&
+        statusFilter !== 'all'
+    ) {
+
+        filteredSlots =
+            filteredSlots.filter(
+                slot =>
+                    slot.status === statusFilter
+            );
     }
-  );
 
-  showAlert(
+    filteredSlots.forEach(slot => {
 
-    ok
-      ? `Deleted ${data.deleted} completed log(s).`
-      : 'Error',
+        grid.innerHTML += `
 
-    ok
-      ? 'success'
-      : 'error'
-  );
+            <div
+                class="slot ${slot.status}"
+                data-slot-id="${slot.slot_id}"
+            >
 
-  if (ok) {
+                <h3>${slot.slot_id}</h3>
 
-    loadLogs(1);
-  }
-}
+                <p>
+                    ${slot.status}
+                </p>
 
-// ── Reset System ──────────────────────────────────────────────────────────────
-
-async function resetAll() {
-
-  if (!confirm(
-    'Reset ALL slots to free and clear all logs?'
-  )) return;
-
-  const { ok, data } = await api(
-    '/reset',
-    {
-      method: 'POST'
-    }
-  );
-
-  showAlert(
-
-    ok
-      ? data.message
-      : 'Error',
-
-    ok
-      ? 'success'
-      : 'error'
-  );
-
-  if (ok) {
-
-    loadDashboard();
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatTime(iso) {
-
-  if (!iso) return '—';
-
-  return new Date(iso)
-    .toLocaleString('en-IN', {
-
-      day: '2-digit',
-
-      month: 'short',
-
-      hour: '2-digit',
-
-      minute: '2-digit'
+            </div>
+        `;
     });
 }
 
-function calcDur(entry, exit) {
+/* =========================================
+   REVENUE CHART
+========================================= */
 
-  const m = Math.floor(
-    (
-      new Date(exit) -
-      new Date(entry)
-    ) / 60000
-  );
+async function loadRevenueChart() {
 
-  return m >= 60
+    try {
 
-    ? `${Math.floor(m / 60)}h ${m % 60}m`
+        const response =
+            await fetch(
+                'http://127.0.0.1:8000/analytics/revenue'
+            );
 
-    : `${m}m`;
-}
+        const data =
+            await response.json();
 
-function buildPagination(id, total, current, onClick) {
+        const labels =
+            data.map(d => d.date);
 
-  const el = document.getElementById(id);
+        const revenues =
+            data.map(d => d.revenue);
 
-  if (total <= 1) {
+        const canvas =
+            document.getElementById('revenueChart');
 
-    el.innerHTML = '';
+        if (!canvas) return;
 
-    return;
-  }
+        const ctx =
+            canvas.getContext('2d');
 
-  let html = '';
+        if (window.revenueChartInstance) {
 
-  for (let i = 1; i <= total; i++) {
+            window.revenueChartInstance.destroy();
+        }
 
-    if (
-      i === 1 ||
-      i === total ||
-      Math.abs(i - current) <= 2
-    ) {
+        window.revenueChartInstance =
+            new Chart(ctx, {
 
-      html += `
+                type: 'line',
 
-        <button
-          class="page-btn ${
-            i === current ? 'active' : ''
-          }"
+                data: {
 
-          onclick="(${onClick})(${i})">
+                    labels: labels,
 
-          ${i}
+                    datasets: [{
 
-        </button>
-      `;
+                        label: 'Revenue',
 
-    } else if (
-      Math.abs(i - current) === 3
-    ) {
+                        data: revenues,
 
-      html += `
-        <span class="page-btn"
-          style="cursor:default">
-          …
-        </span>
-      `;
+                        borderColor: '#10b981',
+
+                        backgroundColor:
+                            'rgba(16,185,129,0.15)',
+
+                        fill: true,
+
+                        tension: 0.4,
+
+                        borderWidth: 3
+                    }]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false
+                }
+            });
+
+    } catch (error) {
+
+        console.error(
+            'Revenue chart error',
+            error
+        );
     }
-  }
-
-  el.innerHTML = html;
 }
 
-// ── Initialize ────────────────────────────────────────────────────────────────
+/* =========================================
+   FLOOR OCCUPANCY
+========================================= */
 
-loadDashboard();
+async function loadFloorOccupancy() {
+
+    const { ok, data } =
+        await api('/slots');
+
+    if (!ok) return;
+
+    const floors = {};
+
+    data.forEach(slot => {
+
+        if (!floors[slot.floor]) {
+
+            floors[slot.floor] = {
+
+                total: 0,
+
+                occupied: 0
+            };
+        }
+
+        floors[slot.floor].total++;
+
+        if (slot.status === 'occupied') {
+
+            floors[slot.floor].occupied++;
+        }
+    });
+
+    const floorGrid =
+        document.getElementById('floorGrid');
+
+    if (!floorGrid) return;
+
+    floorGrid.innerHTML = '';
+
+    let chartIndex = 0;
+
+    Object.keys(floors).forEach(floor => {
+
+        const stats = floors[floor];
+
+        const occupied =
+            Math.round(
+                (stats.occupied / stats.total) * 100
+            );
+
+        const free =
+            100 - occupied;
+
+        const chartId =
+            `floorChart${chartIndex}`;
+
+        floorGrid.innerHTML += `
+
+            <div class="floor-item">
+
+                <h3>${floor}</h3>
+
+                <div class="small-chart">
+
+                    <canvas id="${chartId}"></canvas>
+
+                </div>
+
+                <p>${occupied}% Occupied</p>
+
+            </div>
+        `;
+
+        chartIndex++;
+
+        requestAnimationFrame(() => {
+
+            const canvas =
+                document.getElementById(chartId);
+
+            if (!canvas) return;
+
+            const ctx =
+                canvas.getContext('2d');
+
+            new Chart(ctx, {
+
+                type: 'doughnut',
+
+                data: {
+
+                    labels: [
+                        'Occupied',
+                        'Free'
+                    ],
+
+                    datasets: [{
+
+                        data: [
+                            occupied,
+                            free
+                        ],
+
+                        backgroundColor: [
+                            '#ef4444',
+                            '#10b981'
+                        ],
+
+                        borderWidth: 0
+                    }]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    animation: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        }
+                    },
+
+                    cutout: '70%'
+                }
+            });
+        });
+    });
+}
+
+/* =========================================
+   VEHICLE DISTRIBUTION
+========================================= */
+
+async function loadVehicleDistribution(){
+
+    const response = await fetch(
+        "http://127.0.0.1:8000/analytics/vehicle-distribution"
+    );
+
+    const data = await response.json();
+
+    const total = data.total || 1;
+
+    const carPercent =
+        (data.cars / total) * 100;
+
+    const bikePercent =
+        (data.bikes / total) * 100;
+
+    const truckPercent =
+        (data.trucks / total) * 100;
+
+    document.getElementById("carBar")
+        .style.width = `${carPercent}%`;
+
+    document.getElementById("bikeBar")
+        .style.width = `${bikePercent}%`;
+
+    document.getElementById("truckBar")
+        .style.width = `${truckPercent}%`;
+
+    document.getElementById("carPercent")
+        .innerText = `${carPercent.toFixed(0)}%`;
+
+    document.getElementById("bikePercent")
+        .innerText = `${bikePercent.toFixed(0)}%`;
+
+    document.getElementById("truckPercent")
+        .innerText = `${truckPercent.toFixed(0)}%`;
+}
+
+loadVehicleDistribution();
+
+
+/* =========================================
+   ENTRY
+========================================= */
+
+async function registerEntry() {
+
+    const vehicle_number =
+        document.getElementById('vehicleNum')
+            .value
+            .trim()
+            .toUpperCase();
+
+    const vehicle_type =
+        document.getElementById('vehicleType')
+            .value;
+
+    if (!vehicle_number || !vehicle_type) {
+
+        showAlert(
+            'Enter vehicle details',
+            'error'
+        );
+
+        return;
+    }
+
+    const { ok, data } =
+        await api('/entry', {
+
+            method: 'POST',
+
+            body: JSON.stringify({
+
+                vehicle_number,
+                vehicle_type
+            })
+        });
+
+    if (!ok) {
+
+        showAlert(
+            data.detail || 'Error',
+            'error'
+        );
+
+        return;
+    }
+
+    showAlert(
+        `Allocated ${data.slot_allocated}`
+    );
+
+    loadDashboardData();
+
+    loadSlots();
+}
+
+/* =========================================
+   EXIT
+========================================= */
+
+async function processExit() {
+
+    const vehicle_number =
+        document.getElementById('exitVehicleNum')
+            .value
+            .trim()
+            .toUpperCase();
+
+    if (!vehicle_number) {
+
+        showAlert(
+            'Enter vehicle number',
+            'error'
+        );
+
+        return;
+    }
+
+    const { ok, data } =
+        await api('/exit', {
+
+            method: 'POST',
+
+            body: JSON.stringify({
+                vehicle_number
+            })
+        });
+
+    if (!ok) {
+
+        showAlert(
+            data.detail || 'Error',
+            'error'
+        );
+
+        return;
+    }
+
+    showAlert(data.message);
+
+    loadDashboardData();
+
+    loadSlots();
+}
+
+/* =========================================
+   LOAD LOGS
+========================================= */
+
+async function loadLogs(page = 1) {
+
+    const { ok, data } =
+        await api(`/logs?page=${page}&limit=50`);
+
+    if (!ok) return;
+
+    const tbody =
+        document.getElementById('logsBody');
+
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    data.logs.forEach(log => {
+
+        tbody.innerHTML += `
+
+            <tr>
+
+                <td>
+                    ${log.vehicle_number || '-'}
+                </td>
+
+                <td>
+                    ${log.slot_id || '-'}
+                </td>
+
+                <td>
+                    ${
+                        log.entry_time
+                        ? formatTime(log.entry_time)
+                        : '-'
+                    }
+                </td>
+
+                <td>
+                    ${
+                        log.exit_time
+                        ? formatTime(log.exit_time)
+                        : '-'
+                    }
+                </td>
+
+                <td>
+                    ${log.duration || '-'}
+                </td>
+
+                <td>
+                    ₹${log.fee || 0}
+                </td>
+
+                <td>
+
+                    <span class="
+                        status
+                        ${log.status}
+                    ">
+                        ${log.status || 'occupied'}
+                    </span>
+
+                </td>
+
+            </tr>
+        `;
+    });
+}
+
+/* =========================================
+   FORMAT TIME
+========================================= */
+
+function formatTime(time) {
+
+    if (!time) return '-';
+
+    return new Date(time)
+        .toLocaleString('en-IN');
+}
+
+/* =========================================
+   WEBSOCKET
+========================================= */
+
+const socket =
+    new WebSocket(
+        'ws://127.0.0.1:8000/ws'
+    );
+
+socket.onopen = () => {
+
+    console.log(
+        'WebSocket Connected'
+    );
+};
+
+socket.onmessage = async (event) => {
+
+    const data =
+        JSON.parse(event.data);
+
+    console.log(
+        'Live Update:',
+        data
+    );
+
+    const slotCard =
+        document.querySelector(
+
+            `[data-slot-id="${data.slot_id}"]`
+        );
+
+    if (slotCard) {
+
+        slotCard.classList.remove(
+            'free',
+            'occupied'
+        );
+
+        slotCard.classList.add(
+            data.status
+        );
+
+        slotCard.innerHTML = `
+
+            <h3>${data.slot_id}</h3>
+
+            <p>${data.status}</p>
+        `;
+    }
+
+    await loadSummary();
+
+    await loadFloorOccupancy();
+
+        loadVehicleDistribution();
+};
+
+/* =========================================
+   CURRENT DATE
+========================================= */
+
+const dateBox =
+    document.getElementById(
+        'currentDate'
+    );
+
+if (dateBox) {
+
+    dateBox.textContent =
+        new Date().toLocaleDateString(
+            'en-IN',
+            {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            }
+        );
+}
+
+/* =========================================
+   WINDOW LOAD
+========================================= */
+
+document
+    .getElementById('floorFilter')
+    ?.addEventListener(
+        'change',
+        renderSlots
+    );
+
+document
+    .getElementById('statusFilter')
+    ?.addEventListener(
+        'change',
+        renderSlots
+    );
+
+window.onload = async () => {
+
+    await loadDashboardData();
+
+    await loadSlots();
+
+    await loadLogs();
+
+    await loadRevenueChart();
+
+    await loadFloorOccupancy();
+
+     loadVehicleDistribution(); 
+
+};

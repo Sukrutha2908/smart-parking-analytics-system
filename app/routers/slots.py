@@ -1,34 +1,70 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+from app.mongodb import slot_collection
 
-from app.models.slot_model import SlotModel
+router = APIRouter()
 
-from app.mongodb import slots_collection
-router = APIRouter(
-    prefix="/slots",
-    tags=["Slots"]
-)
+
+# ---------------------------------------------------
+# CREATE SLOTS
+# ---------------------------------------------------
 
 @router.post("/")
-def create_slot(slot: SlotModel):
+def create_slots():
 
     try:
 
-        slot_dict = slot.model_dump()
+        # Delete existing slots
+        slot_collection.delete_many({})
 
-        return {
-            "message": "Slot Created Successfully",
-            "data": slot_dict
+        floors = {
+            "B1": 100,
+            "B2": 100,
+            "L1": 100,
+            "L2": 100,
+            "L3": 100
         }
 
-    except HTTPException as e:
-        raise e
+        all_slots = []
+
+        for floor, count in floors.items():
+
+            for i in range(1, count + 1):
+
+                slot = {
+
+                    "slot_number": i,
+
+                    "slot_id": f"{floor}-{str(i).zfill(2)}",
+
+                    "floor": floor,
+
+                    "status": "free"
+                }
+
+                all_slots.append(slot)
+
+        result = slot_collection.insert_many(all_slots)
+
+        return {
+
+            "message": "Slots created successfully",
+
+            "inserted_count": len(result.inserted_ids),
+
+            "total_slots": len(all_slots)
+        }
 
     except Exception as e:
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        return {
+
+            "error": str(e)
+        }
+
+
+# ---------------------------------------------------
+# GET ALL SLOTS
+# ---------------------------------------------------
 
 @router.get("/")
 def get_slots():
@@ -36,17 +72,65 @@ def get_slots():
     try:
 
         slots = list(
-            slots_collection.find(
-                {},
-                {"_id": 0}
-            )
+
+            slot_collection.find({}).sort([
+
+                ("floor", 1),
+
+                ("slot_number", 1)
+
+            ])
+
         )
 
-        return slots
+        cleaned_slots = []
+
+        for slot in slots:
+
+            slot["_id"] = str(slot["_id"])
+
+            cleaned_slots.append(slot)
+
+        return cleaned_slots
 
     except Exception as e:
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        return {
+
+            "error": str(e)
+        }
+
+# ---------------------------------------------------
+# SLOT SUMMARY
+# ---------------------------------------------------
+
+@router.get("/summary")
+def get_slot_summary():
+
+    try:
+
+        total_slots = slot_collection.count_documents({})
+
+        available_slots = slot_collection.count_documents({
+            "status": "free"
+        })
+
+        occupied_slots = slot_collection.count_documents({
+            "status": "occupied"
+        })
+
+        return {
+            
+            "total": total_slots,
+            
+            "free": available_slots,
+            
+            "occupied": occupied_slots
+        }
+
+    except Exception as e:
+
+        return {
+
+            "error": str(e)
+        }

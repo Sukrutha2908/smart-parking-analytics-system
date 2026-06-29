@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
+from pymongo.errors import PyMongoError
 
 from app.models.billing_model import BillingModel
+from app.mongodb import billing_collection
 
 router = APIRouter(
     prefix="/billing",
@@ -8,13 +10,15 @@ router = APIRouter(
 )
 
 # Create Billing
-
 @router.post("/")
 def create_bill(bill: BillingModel):
 
     try:
+        # Convert model to dictionary
+        bill_dict = bill.model_dump()
 
-        bill_dict = bill.dict()
+        # Here you can insert into MongoDB later
+        # result = billing_collection.insert_one(bill_dict)
 
         return {
             "message": "Billing Created Successfully",
@@ -24,70 +28,100 @@ def create_bill(bill: BillingModel):
     except HTTPException as e:
         raise e
 
-    except Exception as e:
+    except PyMongoError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database Error: {str(e)}"
+        )
 
+    except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected Error: {str(e)}"
         )
 
-# Get All Bills
 
+# Get All Bills
 @router.get("/")
 def get_bills():
 
     try:
 
-        bills = []
+        bills = list(
+            billing_collection.find()
+        )
 
-        if not bills:
+        for bill in bills:
 
-            raise HTTPException(
-                status_code=404,
-                detail="No Billing Records Found"
+            bill["_id"] = str(
+                bill["_id"]
             )
 
-        return {
-            "count": len(bills),
-            "data": bills
-        }
+        return bills
 
-    except HTTPException as e:
-        raise e
+    except PyMongoError as e:
+
+        raise HTTPException(
+
+            status_code=500,
+
+            detail=f"Database Error: {str(e)}"
+        )
 
     except Exception as e:
 
         raise HTTPException(
+
             status_code=500,
+
             detail=f"Unexpected Error: {str(e)}"
         )
-
-# Get Bill By Vehicle ID
-
-@router.get("/{vehicle_id}")
-def get_bill(vehicle_id: int):
+    
+    
+    # Get Bill By Vehicle ID
+@router.get("/{vehicle_number}")
+def get_bill(vehicle_number: str):
 
     try:
 
-        bill = None
+        bill = billing_collection.find_one({
+
+            "vehicle_number": vehicle_number
+        })
 
         if not bill:
 
             raise HTTPException(
+
                 status_code=404,
-                detail=f"No Bill Found for Vehicle ID {vehicle_id}"
+
+                detail=f"No Bill Found for {vehicle_number}"
             )
 
-        return {
-            "data": bill
-        }
+        bill["_id"] = str(
+            bill["_id"]
+        )
+
+        return bill
 
     except HTTPException as e:
+
         raise e
+
+    except PyMongoError as e:
+
+        raise HTTPException(
+
+            status_code=500,
+
+            detail=f"Database Error: {str(e)}"
+        )
 
     except Exception as e:
 
         raise HTTPException(
+
             status_code=500,
+
             detail=f"Unexpected Error: {str(e)}"
         )

@@ -1,9 +1,19 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class SlotModel(BaseModel):
-    slot_id: int
+
+    floor: str
     slot_number: int
-    slot_type: str
-    floor_number: int
-    parking_zone: str
-    is_available: bool
+    slot_id: str
+    status: str
+
+    vehicle_number: Optional[str] = None
+    vehicle_type: Optional[str] = None
+    owner_name: Optional[str] = None
+
+    entry_time: Optional[str] = None
+    exit_time: Optional[str] = None
+
+    duration: Optional[str] = None
+    amount: Optional[int] = None

@@ -1,120 +1,608 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Parking — Slot Management System</title>
-  <link rel="icon" href="/static/favicon.ico">
-  <link rel="stylesheet" href="/frontend/script.css">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    Smart Parking Dashboard
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="/frontend/script.css"
+  />
+
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
+
 <body>
 
-<aside class="sidebar">
-  <div class="brand">
-    <span class="brand-icon">🅿</span>
-    <div>
-      <div class="brand-name">Smart Parking</div>
-      <div class="brand-sub">Slot Management System</div>
-    </div>
-  </div>
-  <nav>
-    <button class="nav-item active" data-view="dashboard">⊞&nbsp; Dashboard</button>
-    <button class="nav-item" data-view="entry">↓&nbsp; Vehicle Entry</button>
-    <button class="nav-item" data-view="exit">↑&nbsp; Exit &amp; Billing</button>
-    <button class="nav-item" data-view="logs">☰&nbsp; Parking Logs</button>
-  </nav>
-  <div class="sidebar-footer">Rate: ₹20 / hour &nbsp;|&nbsp; 500 slots</div>
-</aside>
+  <!-- =========================
+       SIDEBAR
+  ========================== -->
 
-<main class="main">
-  <div id="alertBox" class="alert hidden"></div>
-  <div id="apiBanner" class="api-banner hidden">
-  </div>
+  <aside class="sidebar">
 
-  <!-- Stats -->
-  <div class="stats-bar">
-    <div class="stat-card"><div class="stat-label">Total Slots</div><div class="stat-value" id="statTotal">500</div></div>
-    <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value green" id="statFree">—</div></div>
-    <div class="stat-card"><div class="stat-label">Occupied</div><div class="stat-value red" id="statOcc">—</div></div>
-    <div class="stat-card"><div class="stat-label">Occupancy</div><div class="stat-value blue" id="statPct">—</div></div>
-  </div>
+    <div class="brand">
 
-  <!-- DASHBOARD -->
-  <section id="view-dashboard" class="view active">
-    <div class="view-header">
-      <h2>Slot Overview</h2>
-      <div class="legend"><span class="dot free"></span> Free &nbsp;<span class="dot occ"></span> Occupied</div>
-      <div class="filter-row">
-        <select id="filterStatus" onchange="renderSlots()">
-          <option value="all">All slots</option>
-          <option value="free">Free only</option>
-          <option value="occupied">Occupied only</option>
-        </select>
-        <input type="text" id="filterSlot" placeholder="Jump to slot #" style="width:130px" oninput="renderSlots()" />
-        <button class="btn small" onclick="loadDashboard()">↻ Refresh</button>
+      <div class="logo-box">
+        🚗
       </div>
-    </div>
-    <div class="slot-grid" id="slotGrid"><p style="color:var(--muted);padding:1rem">Loading slots…</p></div>
-    <div class="pagination" id="dashPagination"></div>
-  </section>
 
-  <!-- ENTRY -->
-  <section id="view-entry" class="view">
-    <div class="view-header"><h2>Register Vehicle Entry</h2></div>
-    <div class="card" style="max-width:480px">
-      <div class="form-row">
-        <label for="vehicleNum">Vehicle Number</label>
-        <input id="vehicleNum" type="text" placeholder="e.g. AP39AB1234" maxlength="15"
-               onkeydown="if(event.key==='Enter') registerEntry()" />
+      <div>
+
+        <div class="brand-name">
+          Smart Parking
+        </div>
+
+        <div class="brand-sub">
+          Multi-Level Parking System
+        </div>
+
       </div>
-      <button class="btn primary" onclick="registerEntry()">↓ Register Entry</button>
-      <div id="entryResult" class="hidden"></div>
-    </div>
-  </section>
 
-  <!-- EXIT -->
-  <section id="view-exit" class="view">
-    <div class="view-header"><h2>Process Exit &amp; Billing</h2></div>
-    <div class="card" style="max-width:480px">
-      <div class="form-row">
-        <label for="exitVehicleNum">Vehicle Number</label>
-        <input id="exitVehicleNum" type="text" placeholder="e.g. AP39AB1234" maxlength="15"
-               onkeydown="if(event.key==='Enter') processExit()" />
+    </div>
+
+    <nav>
+
+      <button
+        class="nav-item active"
+        data-view="dashboard"
+      >
+        ⊞ Dashboard
+      </button>
+
+      <button
+        class="nav-item"
+        data-view="slots"
+      >
+        🅿 Slots
+      </button>
+
+      <button
+        class="nav-item"
+        data-view="entry"
+      >
+        ↓ Vehicle Entry
+      </button>
+
+      <button
+        class="nav-item"
+        data-view="billing"
+      >
+        ↑ Exit & Billing
+      </button>
+
+      <button
+        class="nav-item"
+        data-view="logs"
+      >
+        ☰ Parking Logs
+      </button>
+
+    </nav>
+
+    <div class="sidebar-footer">
+
+      <div>
+        🪙 Rate: ₹20 / hour
       </div>
-      <button class="btn danger" onclick="processExit()">↑ Process Exit</button>
-      <div id="billCard" class="bill-card hidden"></div>
-    </div>
-  </section>
 
-  <!-- LOGS -->
-  <section id="view-logs" class="view">
-    <div class="view-header">
-      <h2>Parking Logs</h2>
-      <div class="filter-row">
-        <select id="logStatus" onchange="loadLogs(1)">
-          <option value="">All records</option>
-          <option value="active">Currently parked</option>
-          <option value="completed">Completed</option>
-        </select>
-        <button class="btn danger small" onclick="cleanupLogs()">🗑 Clear Completed</button>
-        <button class="btn danger small" onclick="resetAll()">⚠ Reset All</button>
+      <div>
+        🅿 Total Slots: 500
       </div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Vehicle</th><th>Slot</th><th>Entry Time</th>
-            <th>Exit Time</th><th>Duration</th><th>Fee</th><th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="logsBody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="pagination" id="logPagination"></div>
-  </section>
-</main>
 
-<script src="/frontend/script.js"></script>
+    </div>
+
+  </aside>
+
+  <!-- =========================
+       MAIN
+  ========================== -->
+
+  <main class="main">
+
+    <!-- HEADER -->
+
+    <header class="top-header">
+
+      <div>
+
+        <h1>
+          Smart Parking Dashboard
+        </h1>
+
+        <p>
+          Monitor parking activity and analytics
+        </p>
+
+      </div>
+
+      <div
+        class="header-date"
+        id="currentDate"
+      ></div>
+
+    </header>
+
+    <!-- =========================
+         DASHBOARD VIEW
+    ========================== -->
+
+    <section
+      id="view-dashboard"
+      class="view active"
+    >
+
+      <!-- KPI -->
+
+      <div class="stats-bar">
+
+        <div class="stat-card">
+
+          <span class="stat-label">
+            TOTAL SLOTS
+          </span>
+
+          <h2
+            id="statTotal"
+            class="stat-value"
+          >
+            0
+          </h2>
+
+        </div>
+
+        <div class="stat-card">
+
+          <span class="stat-label">
+            AVAILABLE
+          </span>
+
+          <h2
+            id="statFree"
+            class="stat-value green"
+          >
+            0
+          </h2>
+
+        </div>
+
+        <div class="stat-card">
+
+          <span class="stat-label">
+            OCCUPIED
+          </span>
+
+          <h2
+            id="statOcc"
+            class="stat-value red"
+          >
+            0
+          </h2>
+
+        </div>
+
+        <div class="stat-card">
+
+          <span class="stat-label">
+            OCCUPANCY
+          </span>
+
+          <h2
+            id="statPct"
+            class="stat-value blue"
+          >
+            0%
+          </h2>
+
+        </div>
+
+      </div>
+
+      <!-- ANALYTICS -->
+
+      <div class="analytics-layout">
+
+        <!-- OCCUPANCY -->
+
+        <div class="analytics-card large-card">
+
+          <h3>
+            Occupancy Overview
+          </h3>
+
+          <div
+            class="floor-grid"
+            id="floorGrid"
+          ></div>
+
+        </div>
+
+        <!-- CHARTS -->
+
+        <div class="bottom-charts">
+
+          <!-- REVENUE -->
+
+          <div class="analytics-card small-card">
+
+            <h3>
+              Revenue Trend
+            </h3>
+
+            <div class="chart-box">
+
+              <canvas id="revenueChart"></canvas>
+
+            </div>
+
+          </div>
+
+          <!-- VEHICLE DISTRIBUTION -->
+
+          <div class="analytics-card small-card">
+
+            <h3>
+              Vehicle Distribution
+            </h3>
+
+            <div class="vehicle-stats">
+
+              <!-- Cars -->
+
+              <div class="vehicle-row">
+
+                <span>
+                  Cars
+                </span>
+
+                <strong id="carPercent">
+                  0%
+                </strong>
+
+              </div>
+
+              <div class="vehicle-bar">
+
+                <div
+                  id="carBar"
+                  class="vehicle-fill blue"
+                  style="width:0%"
+                ></div>
+
+              </div>
+
+              <!-- Bikes -->
+
+              <div class="vehicle-row">
+
+                <span>
+                  Bikes
+                </span>
+
+                <strong id="bikePercent">
+                  0%
+                </strong>
+
+              </div>
+
+              <div class="vehicle-bar">
+
+                <div
+                  id="bikeBar"
+                  class="vehicle-fill green"
+                  style="width:0%"
+                ></div>
+
+              </div>
+
+              <!-- Trucks -->
+
+              <div class="vehicle-row">
+
+                <span>
+                  Trucks
+                </span>
+
+                <strong id="truckPercent">
+                  0%
+                </strong>
+
+              </div>
+
+              <div class="vehicle-bar">
+
+                <div
+                  id="truckBar"
+                  class="vehicle-fill orange"
+                  style="width:0%"
+                ></div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- =========================
+         SLOTS VIEW
+    ========================== -->
+
+    <section
+      id="view-slots"
+      class="view"
+    >
+
+      <div class="card">
+
+        <h2>
+          Parking Slots
+        </h2>
+
+        <br />
+
+        <div
+          style="
+            display:flex;
+            gap:16px;
+            margin-bottom:20px;
+          "
+        >
+
+          <select id="floorFilter">
+
+            <option value="all">
+              All Floors
+            </option>
+
+            <option value="B1">
+              B1
+            </option>
+
+            <option value="B2">
+              B2
+            </option>
+
+            <option value="L1">
+              L1
+            </option>
+
+            <option value="L2">
+              L2
+            </option>
+
+            <option value="L3">
+              L3
+            </option>
+
+          </select>
+
+          <select id="statusFilter">
+
+            <option value="all">
+              All Status
+            </option>
+
+            <option value="free">
+              Free
+            </option>
+
+            <option value="occupied">
+              Occupied
+            </option>
+
+          </select>
+
+        </div>
+
+        <div
+          id="slotGrid"
+          class="slot-grid"
+        ></div>
+
+      </div>
+
+    </section>
+
+    <!-- =========================
+         ENTRY VIEW
+    ========================== -->
+
+    <section
+      id="view-entry"
+      class="view"
+    >
+
+      <div class="card">
+
+        <h2>
+          Register Vehicle Entry
+        </h2>
+
+        <br />
+
+        <div class="form-row">
+
+          <label>
+            Vehicle Number
+          </label>
+
+          <input
+            type="text"
+            id="vehicleNum"
+            placeholder="e.g AP39AB1234"
+          />
+
+        </div>
+
+        <div class="form-row">
+
+          <label>
+            Vehicle Type
+          </label>
+
+          <select id="vehicleType">
+
+            <option value="">
+              Select Vehicle Type
+            </option>
+
+            <option value="Truck">
+              Large Vehicle
+            </option>
+
+            <option value="Truck">
+              Mini Truck
+            </option>
+
+            <option value="Car">
+              Four Wheeler
+            </option>
+
+            <option value="Bike">
+              Two Wheeler
+            </option>
+
+          </select>
+
+        </div>
+
+        <button
+          class="btn primary"
+          onclick="registerEntry()"
+        >
+          Register Entry
+        </button>
+
+      </div>
+
+    </section>
+
+    <!-- =========================
+         BILLING VIEW
+    ========================== -->
+
+    <section
+      id="view-billing"
+      class="view"
+    >
+
+      <div class="card">
+
+        <h2>
+          Vehicle Exit & Billing
+        </h2>
+
+        <br />
+
+        <div class="form-row">
+
+          <label>
+            Vehicle Number
+          </label>
+
+          <input
+            type="text"
+            id="exitVehicleNum"
+            placeholder="Enter vehicle number"
+          />
+
+        </div>
+
+        <button
+          class="btn danger"
+          onclick="processExit()"
+        >
+          Process Exit
+        </button>
+
+      </div>
+
+    </section>
+
+    <!-- =========================
+         LOGS VIEW
+    ========================== -->
+
+    <section
+      id="view-logs"
+      class="view"
+    >
+
+      <div class="card">
+
+        <h2>
+          Parking Logs
+        </h2>
+
+        <br />
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th>
+                Vehicle
+              </th>
+
+              <th>
+                Slot
+              </th>
+
+              <th>
+                Entry Time
+              </th>
+
+              <th>
+                Exit Time
+              </th>
+
+              <th>
+                Duration
+              </th>
+
+              <th>
+                Fee
+              </th>
+
+              <th>
+                Status
+              </th>
+
+            </tr>
+
+          </thead>
+
+          <tbody id="logsBody"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="/frontend/script.js"></script>
+
 </body>
+
 </html>
