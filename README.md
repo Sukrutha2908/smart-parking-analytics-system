@@ -2,6 +2,7 @@
 
 ## Overview
 
+
 Smart Parking Analytics System is a full-stack web application developed using **FastAPI**, **MongoDB Atlas**, **HTML**, **CSS**, and **JavaScript**.
 The application helps manage parking slots, vehicle entry/exit, billing, transactions, and parking analytics through a modern dashboard interface.
 
@@ -13,6 +14,11 @@ The system provides:
 * Parking logs tracking
 * Occupancy analytics
 * MongoDB Atlas cloud database integration
+
+Smart Parking Analytics System is a full-stack intelligent parking management application developed using **FastAPI**, **MongoDB Atlas**, **Jinja2 Templates**, **HTML**, **CSS**, and **JavaScript**.
+
+The system provides real-time parking management, vehicle tracking, billing analytics, occupancy monitoring, and dynamic dashboard visualization for multi-level parking environments.
+
 
 ---
 
@@ -31,6 +37,37 @@ The system provides:
 * Register vehicle entry
 * Automatically allocate free parking slot
 * Prevent duplicate active parking entries
+## Dashboard Analytics
+
+* Real-time parking occupancy monitoring
+* Weekly revenue analytics
+* Vehicle distribution analytics
+* Dynamic Chart.js visualizations
+* Filter-based analytics:
+
+  * Current Week
+  * Last Week
+  * This Month
+
+---
+
+## Parking Slot Management
+
+* Multi-level slot allocation
+* Available slot tracking
+* Occupied slot monitoring
+* Automatic slot assignment
+
+---
+
+## Vehicle Entry System
+
+* Register vehicle entry
+* Prevent duplicate active entries
+* Automatic free slot allocation
+* Real-time parking updates
+
+---
 
 ## Exit & Billing
 
@@ -59,6 +96,29 @@ The system provides:
 * Dynamic dashboard updates
 * Favicon support
 * GitHub version control
+* Automatic parking fee calculation
+* Billing summary generation
+* Revenue tracking
+* MongoDB billing storage
+
+---
+
+## Parking Logs
+
+* Active parking records
+* Completed parking records
+* Pagination support
+* Cleanup completed logs
+* Real-time updates
+
+---
+
+## Real-Time Features
+
+* FastAPI WebSocket integration
+* Live dashboard refresh
+* Dynamic occupancy updates
+* Real-time analytics synchronization
 
 ---
 
@@ -70,12 +130,24 @@ The system provides:
 * Python
 * Uvicorn
 * Pydantic
+* Python
+* FastAPI
+* Uvicorn
+* Pydantic
+* WebSockets
+
+---
 
 ## Frontend
 
 * HTML5
 * CSS3
 * JavaScript (Vanilla JS)
+* Vanilla JavaScript
+* Jinja2 Templates
+* Chart.js
+
+---
 
 ## Database
 
@@ -86,6 +158,12 @@ The system provides:
 
 * Git & GitHub
 * VS Code
+---
+
+## Development Tools
+
+* VS Code
+* Git & GitHub
 
 ---
 
@@ -107,6 +185,28 @@ SMART-PARKING-ANALYTICS-SYSTEM/
 │   ├── index.html
 │   ├── script.css
 │   └── script.js
+│   │   ├── analytics.py
+│   │   ├── billing.py
+│   │   ├── logs.py
+│   │   ├── parking.py
+│   │   ├── slots.py
+│   │   ├── transaction.py
+│   │   └── vehicle.py
+│   │
+│   ├── static/
+│   │   └── favicon.ico
+│   │
+│   ├── websocket_manager.py
+│   ├── mongodb.py
+│   ├── main.py
+│   └── __init__.py
+│
+├── frontend/
+│   ├── script.js
+│   └── script.css
+│
+├── templates/
+│   └── dashboard.html
 │
 ├── services/
 ├── venv/
@@ -114,6 +214,9 @@ SMART-PARKING-ANALYTICS-SYSTEM/
 ├── .gitignore
 ├── README.md
 └── requirements.txt
+=======
+├── requirements.txt
+└── README.md
 ```
 
 ---
@@ -138,12 +241,16 @@ python -m venv venv
 Activate environment:
 
 ### Windows
+### Activate Environment
+
+#### Windows
 
 ```bash
 venv\Scripts\activate
 ```
 
 ### Linux/Mac
+#### Linux / Mac
 
 ```bash
 source venv/bin/activate
@@ -165,6 +272,7 @@ Create `.env` file:
 
 ```env
 MONGO_URI=your_mongodb_atlas_connection_string
+MONGO_URI=your_mongodb_connection_string
 ```
 
 ---
@@ -178,6 +286,7 @@ uvicorn app.main:app --reload
 ---
 
 ## 6. Open Browser
+## 6. Open Application
 
 ```text
 http://127.0.0.1:8000
@@ -197,6 +306,44 @@ http://127.0.0.1:8000
 | GET    | /logs          | View parking logs      |
 | DELETE | /logs/cleanup  | Delete completed logs  |
 | POST   | /reset         | Reset parking system   |
+| Method | Endpoint                        | Description            |
+| ------ | ------------------------------- | ---------------------- |
+| GET    | /                               | Load Dashboard         |
+| GET    | /slots                          | Get Parking Slots      |
+| GET    | /slots/summary                  | Slot Summary Analytics |
+| POST   | /entry                          | Vehicle Entry          |
+| POST   | /exit                           | Vehicle Exit & Billing |
+| GET    | /logs                           | Parking Logs           |
+| DELETE | /logs/cleanup                   | Cleanup Logs           |
+| POST   | /reset                          | Reset Parking System   |
+| GET    | /analytics/occupancy            | Occupancy Analytics    |
+| GET    | /analytics/vehicle-count        | Vehicle Count          |
+| GET    | /analytics/vehicle-distribution | Vehicle Distribution   |
+| GET    | /analytics/weekly-revenue       | Revenue Analytics      |
+
+---
+
+# Analytics Features
+
+## Weekly Revenue Analytics
+
+The system dynamically calculates revenue from MongoDB billing records using aggregation pipelines.
+
+Supported filters:
+
+* Current Week
+* Last Week
+* Monthly Revenue
+
+---
+
+## Vehicle Distribution Analytics
+
+Displays percentage distribution of:
+
+* Cars
+* Bikes
+* Trucks
 
 ---
 
@@ -209,6 +356,7 @@ Parking Fee = Parking Duration × Rate Per Hour
 ```
 
 Default rate:
+### Default Rate
 
 ```text
 ₹20 / hour
@@ -227,6 +375,34 @@ Default rate:
 * Mobile Responsive Improvements
 * PDF Bill Generation
 * Admin Authentication
+# Real-Time Architecture
+
+```text
+Frontend Dashboard
+        ↓
+FastAPI Backend
+        ↓
+MongoDB Atlas
+        ↓
+WebSocket Updates
+```
+
+---
+
+# Future Enhancements
+
+* Kafka Integration
+* Admin Authentication
+* JWT Security
+* QR-Based Parking Entry
+* Online Payments
+* PDF Bill Generation
+* Excel Report Export
+* Heatmap Visualization
+* Email Notifications
+* Mobile Responsive Enhancements
+* Docker Deployment
+* Azure Cloud Deployment
 
 ---
 
@@ -246,6 +422,16 @@ Default rate:
 # GitHub
 
 Repository Branch:
+* Revenue Analytics
+* Occupancy Analytics
+* Vehicle Distribution
+* Parking Logs
+
+(Add screenshots here)
+
+---
+
+# GitHub Branch
 
 ```text
 dev-1
@@ -256,6 +442,10 @@ dev-1
 # Author
 
 Sukrutha, Veeramaheswari
+# Authors
+
+* Sukrutha
+* Veeramaheswari
 
 ---
 

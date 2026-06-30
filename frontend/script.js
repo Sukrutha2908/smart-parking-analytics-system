@@ -239,31 +239,33 @@ function renderSlots() {
    REVENUE CHART
 ========================================= */
 
-async function loadRevenueChart() {
+async function loadRevenueChart(filter = "current") {
 
     try {
 
         const response =
             await fetch(
-                'http://127.0.0.1:8000/analytics/revenue'
+                `http://127.0.0.1:8000/analytics/weekly-revenue?filter=${filter}`
             );
 
         const data =
             await response.json();
 
-        const labels =
-            data.map(d => d.date);
+        console.log("Revenue Data:", data);
 
-        const revenues =
-            data.map(d => d.revenue);
+        const labels = data.labels;
+
+        const values = data.values;
 
         const canvas =
-            document.getElementById('revenueChart');
+            document.getElementById(
+                "revenueChart"
+            );
 
         if (!canvas) return;
 
         const ctx =
-            canvas.getContext('2d');
+            canvas.getContext("2d");
 
         if (window.revenueChartInstance) {
 
@@ -273,7 +275,7 @@ async function loadRevenueChart() {
         window.revenueChartInstance =
             new Chart(ctx, {
 
-                type: 'line',
+                type: "line",
 
                 data: {
 
@@ -281,20 +283,25 @@ async function loadRevenueChart() {
 
                     datasets: [{
 
-                        label: 'Revenue',
+                        label: "Weekly Revenue",
 
-                        data: revenues,
+                        data: values,
 
-                        borderColor: '#10b981',
+                        borderColor: "#28C7A1",
 
                         backgroundColor:
-                            'rgba(16,185,129,0.15)',
+                            "rgba(93,248,216,0.18)",
 
                         fill: true,
 
                         tension: 0.4,
 
-                        borderWidth: 3
+                        borderWidth: 3,
+
+                        pointBackgroundColor:
+                            "#28C7A1",
+
+                        pointRadius: 5
                     }]
                 },
 
@@ -302,14 +309,22 @@ async function loadRevenueChart() {
 
                     responsive: true,
 
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true
+                        }
+                    }
                 }
             });
 
     } catch (error) {
 
         console.error(
-            'Revenue chart error',
+            "Revenue chart error:",
             error
         );
     }
@@ -501,55 +516,91 @@ loadVehicleDistribution();
 
 async function registerEntry() {
 
-    const vehicle_number =
-        document.getElementById('vehicleNum')
-            .value
-            .trim()
-            .toUpperCase();
+    const vehicleNumber =
+        document.getElementById(
+            "vehicleNum"
+        ).value
+        .trim()
+        .toUpperCase();
 
-    const vehicle_type =
-        document.getElementById('vehicleType')
-            .value;
+    const vehicleType =
+        document.getElementById(
+            "vehicleType"
+        ).value;
 
-    if (!vehicle_number || !vehicle_type) {
+    if (!vehicleNumber || !vehicleType) {
 
-        showAlert(
-            'Enter vehicle details',
-            'error'
+        alert(
+            "Please enter vehicle number and select vehicle type"
         );
 
         return;
     }
 
-    const { ok, data } =
-        await api('/entry', {
+    try {
 
-            method: 'POST',
+        const response = await fetch(
 
-            body: JSON.stringify({
+            "http://127.0.0.1:8000/entry",
 
-                vehicle_number,
-                vehicle_type
-            })
-        });
+            {
+                method: "POST",
 
-    if (!ok) {
+                headers: {
+                    "Content-Type": "application/json"
+                },
 
-        showAlert(
-            data.detail || 'Error',
-            'error'
+                body: JSON.stringify({
+
+                    vehicle_number: vehicleNumber,
+
+                    vehicle_type: vehicleType
+                })
+            }
         );
 
-        return;
+        const data = await response.json();
+
+        console.log(data);
+
+        if (data.error || data.detail) {
+
+            alert(
+                data.error || data.detail
+            );
+
+            return;
+        }
+
+        alert(
+            `Vehicle Registered Successfully
+Slot Allocated: ${data.slot_allocated}`
+        );
+
+        // Clear fields
+
+        document.getElementById(
+            "vehicleNum"
+        ).value = "";
+
+        document.getElementById(
+            "vehicleType"
+        ).value = "";
+
+        // Reload dashboard
+
+        loadDashboardData();
+
+        loadSlots();
+
+        loadLogs();
+
+    } catch (error) {
+
+        console.log(error);
+
+        alert("Entry Failed");
     }
-
-    showAlert(
-        `Allocated ${data.slot_allocated}`
-    );
-
-    loadDashboardData();
-
-    loadSlots();
 }
 
 /* =========================================
@@ -596,6 +647,63 @@ async function processExit() {
 
     showAlert(data.message);
 
+    document.getElementById(
+        "billingResult"
+    ).innerHTML = `
+
+        <div class="bill-card">
+
+            <h2>Billing Details</h2>
+
+            <br>
+
+            <p>
+                <strong>Vehicle Number:</strong>
+                ${data.vehicle_number}
+            </p>
+
+            <p>
+                <strong>Slot ID:</strong>
+                ${data.slot_id}
+            </p>
+
+            <p>
+                <strong>Floor:</strong>
+                ${data.floor}
+            </p>
+
+            <p>
+                <strong>Entry Time:</strong>
+                ${formatTime(data.entry_time)}
+            </p>
+
+            <p>
+                <strong>Exit Time:</strong>
+                ${formatTime(data.exit_time)}
+            </p>
+
+            <p>
+                <strong>Duration:</strong>
+                ${data.duration_minutes} mins
+            </p>
+
+            <p>
+                <strong>Rate:</strong>
+                ₹${data.rate_per_hour}/hour
+            </p>
+
+            <h3 style="margin-top:15px;">
+                Total Fee: ₹${data.fee}
+            </h3>
+
+            <p>
+                <strong>Billing ID:</strong>
+                ${data.billing_id}
+            </p>
+
+    </div>
+`;
+
     loadDashboardData();
 
     loadSlots();
@@ -607,9 +715,17 @@ async function processExit() {
 
 async function loadLogs(page = 1) {
 
-    const { ok, data } =
-        await api(`/logs?page=${page}&limit=50`);
+    const search =
+        document.getElementById('searchVehicle')?.value || '';
 
+    const status =
+        document.getElementById('logStatusFilter')?.value || '';
+
+    const { ok, data } =
+        await api(
+            `/logs?page=${page}&limit=50&vehicle_number=${search}&status=${status}`
+        );
+        
     if (!ok) return;
 
     const tbody =
@@ -799,3 +915,10 @@ window.onload = async () => {
      loadVehicleDistribution(); 
 
 };
+
+document
+    .getElementById("weekFilter")
+    .addEventListener("change", async function () {
+
+        await loadRevenueChart(this.value);
+    });

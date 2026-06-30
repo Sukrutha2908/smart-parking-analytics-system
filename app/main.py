@@ -6,14 +6,18 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from pydantic import BaseModel
-
 from fastapi import WebSocket
 from app.websocket_manager import manager
+
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
 
 from datetime import datetime
 from uuid import uuid4
 
 import os
+
+from app.routers.analytics import router as analytics_router
 
 # ─────────────────────────────────────────────
 # Import Routers
@@ -36,6 +40,20 @@ app = FastAPI(
     version="1.0.0",
     description="Real-Time Smart Parking Management System"
 )
+app.mount(
+    "/static",
+    StaticFiles(directory="frontend"),
+    name="static"
+)
+
+
+@app.get("/")
+def home():
+    return FileResponse("frontend/index.html")
+templates = Jinja2Templates(
+    directory="templates"
+)
+    
 
 @app.websocket("/ws")
 
@@ -84,8 +102,15 @@ app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 # ─────────────────────────────────────────────
 
 @app.get("/")
-def home():
-    return FileResponse("frontend/index.html")
+async def home(request: Request):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "title": "Smart Parking Dashboard"
+        }
+    )
 
 
 app.mount(
@@ -186,6 +211,12 @@ initialize_slots()
 class VehicleIn(BaseModel):
     vehicle_number: str
 
+class VehicleEntry(BaseModel):
+
+    vehicle_number: str
+
+    vehicle_type: str
+
 
 # ─────────────────────────────────────────────
 # Favicon API
@@ -228,12 +259,15 @@ vehicle_floor_map = {
 # Vehicle Entry
 
 @app.post("/entry")
-def vehicle_entry(data: dict):
+def vehicle_entry(data: VehicleEntry):
+
+    print(data)
 
     try:
 
-        vehicle_number = data.get("vehicle_number")
-        vehicle_type = data.get("vehicle_type")
+        vehicle_number = data.vehicle_number.strip().upper()
+
+        vehicle_type = data.vehicle_type
 
         if not vehicle_number or not vehicle_type:
 
@@ -368,7 +402,9 @@ def vehicle_exit(body: VehicleIn):
 
         hours = max(duration_seconds / 3600, 0.25)
 
-        fee = round(hours * RATE_PER_HOUR, 2)
+        duration_minutes = round(hours * 60)
+
+        fee = round(duration_minutes / 60 * 20)
 
         logs_col.update_one(
             {"_id": log["_id"]},
@@ -405,7 +441,7 @@ def vehicle_exit(body: VehicleIn):
 
             "slot_id": log["slot_id"],
 
-            "floor": log["floor"],
+            "floor": log.get("floor", "N/A"),
 
             "entry_time": log["entry_time"],
 
@@ -415,9 +451,9 @@ def vehicle_exit(body: VehicleIn):
 
             "rate_per_hour": RATE_PER_HOUR,
 
-            "total_fee": fee,
+            "amount": fee,
 
-            "created_at": datetime.utcnow()
+            "billing_time": datetime.utcnow()
         }
 
         billing_col.insert_one(billing_data)
@@ -449,11 +485,11 @@ def vehicle_exit(body: VehicleIn):
 
             "slot_id": log["slot_id"],
 
-            "floor": log["floor"],
+            "floor": log.get("floor", "N/A"),
 
-            "entry_time": log["entry_time"].isoformat(),
+            "entry_time": str(log.get("entry_time")),
 
-            "exit_time": exit_time.isoformat(),
+            "exit_time": str(exit_time),
 
             "duration_minutes": round(hours * 60),
 
@@ -469,9 +505,11 @@ def vehicle_exit(body: VehicleIn):
 
     except Exception as e:
 
+        print("EXIT ERROR:", str(e))
+
         raise HTTPException(
             status_code=500,
-            detail=f"Vehicle Exit Error: {str(e)}"
+            detail=str(e)
         )
 
 # ─────────────────────────────────────────────
@@ -479,14 +517,42 @@ def vehicle_exit(body: VehicleIn):
 # ─────────────────────────────────────────────
 
 @app.get("/logs")
-def get_logs(page: int = 1, limit: int = 50):
+def get_logs(
+    page: int = 1,
+    limit: int = 50,
+    vehicle_number: str = None,
+    status: str = None
+):
 
     try:
 
         skip = (page - 1) * limit
 
+        query = {}
+
+        # Vehicle Search
+        if vehicle_number:
+
+            query["vehicle_number"] = {
+                "$regex": vehicle_number,
+                "$options": "i"
+            }
+
+        # Status Filter
+        if status:
+
+            if status == "occupied":
+
+                query["exit_time"] = None
+
+            elif status == "exited":
+
+                query["exit_time"] = {
+                    "$ne": None
+                }
+
         docs = list(
-            logs_col.find({}, {"_id": 0})
+            logs_col.find(query, {"_id": 0})
             .sort("entry_time", -1)
             .skip(skip)
             .limit(limit)
@@ -498,54 +564,57 @@ def get_logs(page: int = 1, limit: int = 50):
 
             results.append({
 
-                "vehicle_number": d.get("vehicle_number"),
+                "vehicle_number":
+                    d.get("vehicle_number"),
 
-                "slot_id": d.get("slot_id"),
+                "slot_id":
+                    d.get("slot_id"),
 
-                "slot_number": d.get("slot_number"),
+                "floor":
+                    d.get("floor"),
 
-                "floor": d.get("floor"),
-
-                "status": (
+                "status":
                     "exited"
                     if d.get("exit_time")
-                    else "occupied"
-                ),
+                    else "occupied",
 
-                "entry_time": (
+                "entry_time":
                     d["entry_time"].isoformat()
                     if d.get("entry_time")
-                    else None
-                ),
+                    else None,
 
-                "exit_time": (
+                "exit_time":
                     d["exit_time"].isoformat()
                     if d.get("exit_time")
-                    else None
-                ),
+                    else None,
 
-                "fee": d.get("fee"),
+                "fee":
+                    d.get("fee"),
 
-                "duration": (
+                "duration":
                     f"{round(d.get('duration_minutes', 0))} mins"
                     if d.get("duration_minutes")
                     else "-"
-                ),
-
             })
+
+        total = logs_col.count_documents(query)
 
         return {
 
             "logs": results,
 
-            "total": logs_col.count_documents({})
+            "total": total,
 
+            "page": page,
+
+            "limit": limit,
+
+            "total_pages":
+                (total + limit - 1) // limit
         }
 
     except Exception as e:
 
         return {
-
             "error": str(e)
-
         }
