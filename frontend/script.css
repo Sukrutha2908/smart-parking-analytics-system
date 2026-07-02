@@ -237,131 +237,14 @@ nav {
 .main {
 
   flex: 1;
-
-  padding: 24px;
-
+  padding: 1.5rem;
   display: flex;
 
   flex-direction: column;
-
-  min-height: 100vh;
+  gap: 1.25rem;
 }
 
-/* =========================
-   TOP HEADER
-========================= */
-
-.top-header {
-
-  position: sticky;
-
-  top: 20px;
-
-  z-index: 1000;
-
-  background: linear-gradient(
-    135deg,
-    #0E4B73,
-    #3B7597
-  );
-
-  border-radius: 24px;
-
-  padding: 30px 36px;
-
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  color: white;
-
-  box-shadow:
-    0 8px 24px rgba(9,60,93,0.18);
-  
-  margin-bottom: 28px;
-
-}
-
-.top-header p {
-
-  color: #DCECF5;
-
-  font-size: 17px;
-
-  font-weight: 500;
-
-  margin-top: 6px;
-
-  letter-spacing: 0.3px;
-
-}
-
-.top-header h1 {
-
-  font-size: 56px;
-
-  font-weight: 800;
-
-  letter-spacing: -1px;
-
-  margin-bottom: 8px;
-}
-
-
-.header-date {
-
-  font-size: 22px;
-
-  font-weight: 700;
-
-  color: #ffffff;
-}
-
-/* =========================
-   VIEWS
-========================= */
-
-.view {
-
-  display: none;
-}
-
-.view.active {
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 24px;
-}
-
-.entry-card {
-
-    max-width: 900px;
-
-    margin: 0 auto;
-
-    padding: 35px;
-
-    border-radius: 24px;
-}
-
-.entry-card button {
-
-    padding: 14px 28px;
-
-    border-radius: 14px;
-
-    font-size: 16px;
-
-    font-weight: 600;
-}
-
-/* =========================
-   STATS BAR
-========================= */
+/* Stats */
 
 .stats-bar {
 
@@ -782,187 +665,74 @@ select {
   margin-top: 20px;
 
   border-radius: 20px;
-
-  background: #f9fafb;
-
-  padding: 24px;
+  font-size: 12px;
 }
 
-/* =========================
-   ALERT
-========================= */
-
-.alert {
-
-  padding: 16px;
-
-  border-radius: 14px;
+.badge.active {
+  background: var(--red-light);
+  color: var(--red-dark);
 }
 
-.hidden {
-
-  display: none !important;
+.badge.done {
+  background: var(--blue-light);
+  color: var(--blue-dark);
 }
 
-/* =========================
-   RESPONSIVE
-========================= */
+#billBox {
+  background: white;
 
-@media (max-width: 1200px) {
+  border-radius: 12px;
 
-  .stats-bar {
+  padding: 20px;
 
-    grid-template-columns:
-      repeat(2, 1fr);
-  }
+  width: 340px;
 
-  .bottom-charts {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 
-    grid-template-columns: 1fr;
-  }
+  border: 1px solid #e5e5e5;
 }
 
-@media (max-width: 768px) {
-
-  body {
-
-    flex-direction: column;
-  }
-
-  .sidebar {
-
-    width: 100%;
-
-    height: auto;
-
-    position: relative;
-  }
-
-  .main {
-
-    padding: 16px;
-  }
-
-  .stats-bar {
-
-    grid-template-columns: 1fr;
-  }
-
-  .top-header::before {
-
-  content: "";
-
-  position: absolute;
-
-  top: -40px;
-
-  right: -40px;
-
-  width: 180px;
-
-  height: 180px;
-
-  background: rgba(255,255,255,0.06);
-
-  border-radius: 50%;
+.bill-title {
+  margin-bottom: 1rem;
+  font-size: 22px;
+  font-weight: 700;
 }
 
-  .top-header h1 {
-
-    font-size: 32px;
-  }
-
-  .bottom-charts {
-
-    grid-template-columns: 1fr;
-  }
-
-  .floor-grid {
-
-    grid-template-columns: 1fr;
-  }
+.bill-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.analytics-card {
+.bill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
-    overflow: hidden;
+  padding: 10px 14px;
+
+  background: #f8f8f8;
+
+  border-radius: 8px;
 }
 
-
-.chart-box canvas {
-
-    max-width: 100% !important;
-
-    max-height: 100% !important;
+.bill-label {
+  font-weight: 600;
+  color: #555;
 }
 
-.bottom-charts {
-
-    display: grid;
-
-    grid-template-columns: 1fr 1fr;
-
-    gap: 24px;
-
-    align-items: start;
+.bill-value {
+  font-weight: 500;
+  color: #111;
 }
 
-.small-card {
-
-    min-height: 420px;
-
-    overflow: hidden;
+.bill-row.total {
+  background: #E1F5EE;
+  border: 1px solid #1D9E75;
 }
 
-.floor-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(5, 1fr);
-
-    gap: 20px;
-}
-
-.floor-item {
-
-    background: linear-gradient(
-      180deg,
-      #ffffff,
-      #f2fbff
-    );
-
-    border-radius: 20px;
-
-    padding: 20px;
-
-    border: 1px solid #e5e7eb;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    min-height: 260px;
-}
-
-.small-chart {
-
-    width: 140px;
-
-    height: 140px;
-
-    position: relative;
-
-    margin: 10px auto;
-}
-
-.small-chart canvas {
-
-    width: 140px !important;
-
-    height: 140px !important;
+.bill-row.total .bill-value {
+  color: #1D9E75;
+  font-size: 18px;
+  font-weight: 700;
 }

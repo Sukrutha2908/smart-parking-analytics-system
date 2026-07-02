@@ -4,6 +4,8 @@ from pymongo.errors import PyMongoError
 from app.models.parking_model import ParkingModel
 from app.mongodb import parking_collection
 
+from app.mongodb import slot_collection
+
 router = APIRouter(
     prefix="/parking",
     tags=["Parking"]

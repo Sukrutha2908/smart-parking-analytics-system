@@ -6,6 +6,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pymongo import MongoClient
 from pydantic import BaseModel
+from fastapi import WebSocket
+from app.websocket_manager import manager
+
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
 
 from fastapi import WebSocket
 from app.websocket_manager import manager
@@ -41,6 +46,44 @@ app = FastAPI(
     version="1.0.0",
     description="Real-Time Smart Parking Management System"
 )
+app.mount(
+    "/static",
+    StaticFiles(directory="frontend"),
+    name="static"
+)
+
+
+@app.get("/")
+def home():
+    return FileResponse("frontend/index.html")
+templates = Jinja2Templates(
+    directory="templates"
+)
+    
+
+@app.websocket("/ws")
+
+async def websocket_endpoint(
+
+    websocket: WebSocket
+):
+
+    await manager.connect(
+        websocket
+    )
+
+    try:
+
+        while True:
+
+            await websocket.receive_text()
+
+    except:
+
+        manager.disconnect(
+            websocket
+        )
+
 
 templates = Jinja2Templates(
     directory="templates"

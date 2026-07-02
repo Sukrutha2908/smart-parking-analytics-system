@@ -14,11 +14,14 @@ router = APIRouter(
 def create_bill(bill: BillingModel):
 
     try:
+
         # Convert model to dictionary
         bill_dict = bill.model_dump()
 
-        # Here you can insert into MongoDB later
-        result = billing_collection.insert_one(bill_dict)
+        # Insert into MongoDB
+        result = billing_collection.insert_one(
+            bill_dict
+        )
 
         return {
             "message": "Billing Created Successfully",
@@ -40,7 +43,7 @@ def create_bill(bill: BillingModel):
             status_code=500,
             detail=f"Unexpected Error: {str(e)}"
         )
-
+    
 
 # Get All Bills
 @router.get("/")
@@ -85,10 +88,7 @@ def get_bill(vehicle_number: str):
 
     try:
 
-        bills = billing_collection.find({
-
-            "vehicle_number": vehicle_number.upper()
-        })
+        bills = None
 
         for bill in bills:
             bill["_id"] = str(bill["_id"])
@@ -100,11 +100,9 @@ def get_bill(vehicle_number: str):
                 detail=f"No Bill Found for {vehicle_number}"
             )
 
-        bill["_id"] = str(
-            bill["_id"]
-        )
-
-        return bills
+        return {
+            "data": bill
+        }
 
     except HTTPException as e:
 
