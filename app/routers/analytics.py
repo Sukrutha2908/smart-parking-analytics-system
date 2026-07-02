@@ -3,12 +3,15 @@ from pymongo.errors import PyMongoError
 
 from datetime import datetime, timedelta
 
+from app.mongodb import log_collection
+
 from app.mongodb import (
     slot_collection,
     parking_collection,
     billing_collection,
     transaction_collection,
-    vehicle_collection
+    vehicle_collection,
+    log_collection
 )
 
 router = APIRouter(
@@ -91,9 +94,7 @@ def revenue():
                     },
 
                     "total_revenue": {
-                        "$sum": {
-                            "$ifNull": ["$total_fee", "$amount"]
-                        }
+                        "$sum": "$amount"
                     }
                 }
             }
@@ -272,30 +273,40 @@ def vehicle_count():
 @router.get("/vehicle-distribution")
 def vehicle_distribution():
 
-    total = slot_collection.count_documents(
-        {"status": "occupied"}
+    logs = list(
+        log_collection.find({
+
+        "exit_time": None
+        })
     )
 
-    cars = slot_collection.count_documents(
-        {
-            "status": "occupied",
-            "vehicle_type": "Car"
-        }
-    )
+    cars = 0
+    bikes = 0
+    trucks = 0
 
-    bikes = slot_collection.count_documents(
-        {
-            "status": "occupied",
-            "vehicle_type": "Bike"
-        }
-    )
+    for log in logs:
 
-    trucks = slot_collection.count_documents(
-        {
-            "status": "occupied",
-            "vehicle_type": "Truck"
-        }
-    )
+        vehicle_type = log.get(
+            "vehicle_type",
+            ""
+        )
+
+        if vehicle_type == "Four Wheeler":
+
+            cars += 1
+
+        elif vehicle_type == "Two Wheeler":
+
+            bikes += 1
+
+        elif vehicle_type in [
+            "Mini Truck",
+            "Large Vehicle"
+        ]:
+
+            trucks += 1
+
+    total = cars + bikes + trucks
 
     return {
 
@@ -307,7 +318,6 @@ def vehicle_distribution():
 
         "total": total
     }
-
 
 # =========================================================
 # Weekly Revenue Filter Analytics
@@ -350,9 +360,7 @@ async def weekly_revenue(filter: str = "current"):
                         },
 
                         "total_revenue": {
-                            "$sum": {
-                                "$ifNull": ["$total_fee", "$amount"]
-                            }
+                            "$sum": "$amount"
                         }
                     }
                 },
@@ -446,9 +454,8 @@ async def weekly_revenue(filter: str = "current"):
                     },
 
                     "total_revenue": {
-                        "$sum": {
-                            "$ifNull": ["$total_fee", "$amount"]
-                        }
+    
+                        "$sum": "$amount"
                     }
                 }
             }

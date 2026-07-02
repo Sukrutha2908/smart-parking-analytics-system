@@ -4,6 +4,13 @@ import json
 
 from kafka import KafkaProducer
 
+import os
+
+KAFKA_SERVER = os.getenv(
+    "KAFKA_BOOTSTRAP_SERVERS",
+    "localhost:9092"
+)
+
 producer = KafkaProducer(
 
     bootstrap_servers='localhost:9092',

@@ -5,6 +5,13 @@ import json
 from kafka import KafkaProducer
 from app.mongodb import slot_collection
 
+import os
+
+KAFKA_SERVER = os.getenv(
+    "KAFKA_BOOTSTRAP_SERVERS",
+    "localhost:9092"
+)
+
 producer = KafkaProducer(
 
     bootstrap_servers='localhost:9092',

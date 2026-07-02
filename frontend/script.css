@@ -238,17 +238,13 @@ nav {
 
   flex: 1;
 
-  padding: 28px;
+  padding: 24px;
 
   display: flex;
 
   flex-direction: column;
 
-  gap: 24px;
-
-  width: 100%;
-
-  overflow-x: hidden;
+  min-height: 100vh;
 }
 
 /* =========================
@@ -257,13 +253,19 @@ nav {
 
 .top-header {
 
+  position: sticky;
+
+  top: 20px;
+
+  z-index: 1000;
+
   background: linear-gradient(
     135deg,
     #0E4B73,
     #3B7597
   );
 
-  border-radius: 28px;
+  border-radius: 24px;
 
   padding: 30px 36px;
 
@@ -273,14 +275,12 @@ nav {
 
   align-items: center;
 
-  box-shadow:
-    0 8px 24px rgba(9,60,93,0.18);
-
   color: white;
 
-  border: 1px solid rgba(255,255,255,0.08);
-
-  backdrop-filter: blur(8px);
+  box-shadow:
+    0 8px 24px rgba(9,60,93,0.18);
+  
+  margin-bottom: 28px;
 
 }
 
@@ -846,20 +846,6 @@ select {
   .stats-bar {
 
     grid-template-columns: 1fr;
-  }
-
-  .top-header {
-
-    flex-direction: column;
-
-    align-items: flex-start;
-
-    gap: 18px;
-
-    position: relative;
-    
-    overflow: hidden;
-    
   }
 
   .top-header::before {

@@ -18,10 +18,11 @@ def create_bill(bill: BillingModel):
         bill_dict = bill.model_dump()
 
         # Here you can insert into MongoDB later
-        # result = billing_collection.insert_one(bill_dict)
+        result = billing_collection.insert_one(bill_dict)
 
         return {
             "message": "Billing Created Successfully",
+            "inserted_id": str(result.inserted_id),
             "data": bill_dict
         }
 
@@ -84,12 +85,13 @@ def get_bill(vehicle_number: str):
 
     try:
 
-        bill = billing_collection.find_one({
+        bills = billing_collection.find({
 
-            "vehicle_number": vehicle_number
+            "vehicle_number": vehicle_number.upper()
         })
 
-        if not bill:
+        for bill in bills:
+            bill["_id"] = str(bill["_id"])
 
             raise HTTPException(
 
@@ -102,7 +104,7 @@ def get_bill(vehicle_number: str):
             bill["_id"]
         )
 
-        return bill
+        return bills
 
     except HTTPException as e:
 

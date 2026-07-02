@@ -45,8 +45,7 @@ app = FastAPI(
 templates = Jinja2Templates(
     directory="templates"
 )
-
-app.include_router(analytics_router)
+    
 
 @app.websocket("/ws")
 
@@ -204,6 +203,12 @@ initialize_slots()
 class VehicleIn(BaseModel):
     vehicle_number: str
 
+class VehicleEntry(BaseModel):
+
+    vehicle_number: str
+
+    vehicle_type: str
+
 
 # ─────────────────────────────────────────────
 # Favicon API
@@ -246,12 +251,15 @@ vehicle_floor_map = {
 # Vehicle Entry
 
 @app.post("/entry")
-def vehicle_entry(data: dict):
+def vehicle_entry(data: VehicleEntry):
+
+    print(data)
 
     try:
 
-        vehicle_number = data.get("vehicle_number")
-        vehicle_type = data.get("vehicle_type")
+        vehicle_number = data.vehicle_number.strip().upper()
+
+        vehicle_type = data.vehicle_type
 
         if not vehicle_number or not vehicle_type:
 
@@ -425,7 +433,7 @@ def vehicle_exit(body: VehicleIn):
 
             "slot_id": log["slot_id"],
 
-            "floor": log["floor"],
+            "floor": log.get("floor", "N/A"),
 
             "entry_time": log["entry_time"],
 
@@ -435,9 +443,9 @@ def vehicle_exit(body: VehicleIn):
 
             "rate_per_hour": RATE_PER_HOUR,
 
-            "total_fee": fee,
+            "amount": fee,
 
-            "created_at": datetime.utcnow()
+            "billing_time": datetime.utcnow()
         }
 
         billing_col.insert_one(billing_data)
@@ -469,11 +477,11 @@ def vehicle_exit(body: VehicleIn):
 
             "slot_id": log["slot_id"],
 
-            "floor": log["floor"],
+            "floor": log.get("floor", "N/A"),
 
-            "entry_time": log["entry_time"].isoformat(),
+            "entry_time": str(log.get("entry_time")),
 
-            "exit_time": exit_time.isoformat(),
+            "exit_time": str(exit_time),
 
             "duration_minutes": round(hours * 60),
 
@@ -489,9 +497,11 @@ def vehicle_exit(body: VehicleIn):
 
     except Exception as e:
 
+        print("EXIT ERROR:", str(e))
+
         raise HTTPException(
             status_code=500,
-            detail=f"Vehicle Exit Error: {str(e)}"
+            detail=str(e)
         )
 
 # ─────────────────────────────────────────────

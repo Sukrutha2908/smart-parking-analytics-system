@@ -1,147 +1,121 @@
-  <!DOCTYPE html>
-  <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
-  <head>
+<head>
 
-    <meta charset="UTF-8" />
+  <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>
-      Smart Parking Dashboard
-    </title>
+  <title>Smart Parking Dashboard</title>
 
-    <link
-      rel="stylesheet"
-      href="/frontend/script.css"
-    />
+  <link rel="stylesheet" href="/frontend/script.css" />
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 
-  </head>
+<body>
 
-  <body>
+  <!-- =========================
+      SIDEBAR
+  ========================== -->
 
-    <!-- =========================
-        SIDEBAR
-    ========================== -->
+  <aside class="sidebar">
 
-    <aside class="sidebar">
+    <div class="brand">
 
-      <div class="brand">
+      <div class="logo-box">
+        🚗
+      </div>
 
-        <div class="logo-box">
-          🚗
+      <div>
+
+        <div class="brand-name">
+          Smart Parking
         </div>
 
-        <div>
-
-          <div class="brand-name">
-            Smart Parking
-          </div>
-
-          <div class="brand-sub">
-            Multi-Level Parking System
-          </div>
-
+        <div class="brand-sub">
+          Multi-Level Parking System
         </div>
 
       </div>
 
-      <nav>
+    </div>
 
-        <button
-          class="nav-item active"
-          data-view="dashboard"
-        >
-          ⊞ Dashboard
-        </button>
+    <nav>
 
-        <button
-          class="nav-item"
-          data-view="slots"
-        >
-          🅿 Slots
-        </button>
+      <button class="nav-item active" data-view="dashboard">
+        ⊞ Dashboard
+      </button>
 
-        <button
-          class="nav-item"
-          data-view="entry"
-        >
-          ↓ Vehicle Entry
-        </button>
+      <button class="nav-item" data-view="slots">
+        🅿 Slots
+      </button>
 
-        <button
-          class="nav-item"
-          data-view="billing"
-        >
-          ↑ Exit & Billing
-        </button>
+      <button class="nav-item" data-view="entry">
+        ↓ Vehicle Entry
+      </button>
 
-        <button
-          class="nav-item"
-          data-view="logs"
-        >
-          ☰ Parking Logs
-        </button>
+      <button class="nav-item" data-view="billing">
+        ↑ Exit & Billing
+      </button>
 
-      </nav>
+      <button class="nav-item" data-view="logs">
+        ☰ Parking Logs
+      </button>
 
-      <div class="sidebar-footer">
+    </nav>
 
-        <div>
-          🪙 Rate: ₹20 / hour
-        </div>
+    <div class="sidebar-footer">
 
-        <div>
-          🅿 Total Slots: 500
-        </div>
+      <div>
+        🪙 Rate: ₹20 / hour
+      </div>
+
+      <div>
+        🅿 Total Slots: 500
+      </div>
+
+    </div>
+
+  </aside>
+
+  <!-- =========================
+      MAIN
+  ========================== -->
+
+  <main class="main">
+
+    <!-- FIXED HEADER -->
+
+    <header class="top-header">
+
+      <div>
+
+        <h1>
+          Smart Parking Dashboard
+        </h1>
+
+        <p>
+          Monitor parking activity and analytics
+        </p>
 
       </div>
 
-    </aside>
+      <div class="header-date" id="currentDate"></div>
 
-    <!-- =========================
-        MAIN
-    ========================== -->
+    </header>
 
-    <main class="main">
+    <!-- CONTENT WRAPPER -->
 
-      <!-- HEADER -->
-
-      <header class="top-header">
-
-        <div>
-
-          <h1>
-            Smart Parking Dashboard
-          </h1>
-
-          <p>
-            Monitor parking activity and analytics
-          </p>
-
-        </div>
-
-        <div
-          class="header-date"
-          id="currentDate"
-        ></div>
-
-      </header>
+    <div class="content-wrapper">
 
       <!-- =========================
           DASHBOARD VIEW
       ========================== -->
 
-      <section
-        id="view-dashboard"
-        class="view active"
-      >
+      <section id="view-dashboard" class="view active">
 
         <!-- KPI -->
 
@@ -153,10 +127,7 @@
               TOTAL SLOTS
             </span>
 
-            <h2
-              id="statTotal"
-              class="stat-value"
-            >
+            <h2 id="statTotal" class="stat-value">
               0
             </h2>
 
@@ -168,10 +139,7 @@
               AVAILABLE
             </span>
 
-            <h2
-              id="statFree"
-              class="stat-value green"
-            >
+            <h2 id="statFree" class="stat-value green">
               0
             </h2>
 
@@ -183,10 +151,7 @@
               OCCUPIED
             </span>
 
-            <h2
-              id="statOcc"
-              class="stat-value red"
-            >
+            <h2 id="statOcc" class="stat-value red">
               0
             </h2>
 
@@ -198,10 +163,7 @@
               OCCUPANCY
             </span>
 
-            <h2
-              id="statPct"
-              class="stat-value blue"
-            >
+            <h2 id="statPct" class="stat-value blue">
               0%
             </h2>
 
@@ -221,10 +183,7 @@
               Occupancy Overview
             </h3>
 
-            <div
-              class="floor-grid"
-              id="floorGrid"
-            ></div>
+            <div class="floor-grid" id="floorGrid"></div>
 
           </div>
 
@@ -234,24 +193,19 @@
 
             <!-- REVENUE -->
 
-            <!-- REVENUE -->
-
             <div class="analytics-card small-card">
 
-              <div
-                style="
+              <div style="
                   display:flex;
                   justify-content:space-between;
                   align-items:center;
                   margin-bottom:10px;
-                "
-              >
+                ">
 
                 <h3>
                   Weekly Revenue Analysis
                 </h3>
 
-                <!-- FILTER DROPDOWN -->
                 <select id="weekFilter">
 
                   <option value="current">
@@ -304,11 +258,7 @@
 
                 <div class="vehicle-bar">
 
-                  <div
-                    id="carBar"
-                    class="vehicle-fill blue"
-                    style="width:0%"
-                  ></div>
+                  <div id="carBar" class="vehicle-fill blue" style="width:0%"></div>
 
                 </div>
 
@@ -328,11 +278,7 @@
 
                 <div class="vehicle-bar">
 
-                  <div
-                    id="bikeBar"
-                    class="vehicle-fill green"
-                    style="width:0%"
-                  ></div>
+                  <div id="bikeBar" class="vehicle-fill green" style="width:0%"></div>
 
                 </div>
 
@@ -352,11 +298,7 @@
 
                 <div class="vehicle-bar">
 
-                  <div
-                    id="truckBar"
-                    class="vehicle-fill orange"
-                    style="width:0%"
-                  ></div>
+                  <div id="truckBar" class="vehicle-fill orange" style="width:0%"></div>
 
                 </div>
 
@@ -374,10 +316,7 @@
           SLOTS VIEW
       ========================== -->
 
-      <section
-        id="view-slots"
-        class="view"
-      >
+      <section id="view-slots" class="view">
 
         <div class="card">
 
@@ -387,64 +326,30 @@
 
           <br />
 
-          <div
-            style="
-              display:flex;
-              gap:16px;
-              margin-bottom:20px;
-            "
-          >
+          <div style="display:flex; gap:16px; margin-bottom:20px;">
 
             <select id="floorFilter">
 
-              <option value="all">
-                All Floors
-              </option>
-
-              <option value="B1">
-                B1
-              </option>
-
-              <option value="B2">
-                B2
-              </option>
-
-              <option value="L1">
-                L1
-              </option>
-
-              <option value="L2">
-                L2
-              </option>
-
-              <option value="L3">
-                L3
-              </option>
+              <option value="all">All Floors</option>
+              <option value="B1">B1</option>
+              <option value="B2">B2</option>
+              <option value="L1">L1</option>
+              <option value="L2">L2</option>
+              <option value="L3">L3</option>
 
             </select>
 
             <select id="statusFilter">
 
-              <option value="all">
-                All Status
-              </option>
-
-              <option value="free">
-                Free
-              </option>
-
-              <option value="occupied">
-                Occupied
-              </option>
+              <option value="all">All Status</option>
+              <option value="free">Free</option>
+              <option value="occupied">Occupied</option>
 
             </select>
 
           </div>
 
-          <div
-            id="slotGrid"
-            class="slot-grid"
-          ></div>
+          <div id="slotGrid" class="slot-grid"></div>
 
         </div>
 
@@ -454,10 +359,7 @@
           ENTRY VIEW
       ========================== -->
 
-      <section
-        id="view-entry"
-        class="view"
-      >
+      <section id="view-entry" class="view">
 
         <div class="card">
 
@@ -473,11 +375,7 @@
               Vehicle Number
             </label>
 
-            <input
-              type="text"
-              id="vehicleNum"
-              placeholder="e.g AP39AB1234"
-            />
+            <input type="text" id="vehicleNum" placeholder="e.g AP39AB1234" />
 
           </div>
 
@@ -489,34 +387,17 @@
 
             <select id="vehicleType">
 
-              <option value="">
-                Select Vehicle Type
-              </option>
-
-              <option value="Truck">
-                Large Vehicle
-              </option>
-
-              <option value="Truck">
-                Mini Truck
-              </option>
-
-              <option value="Car">
-                Four Wheeler
-              </option>
-
-              <option value="Bike">
-                Two Wheeler
-              </option>
+              <option value="">Select Vehicle Type</option>
+              <option value="Large Vehicle">Large Vehicle</option>
+              <option value="Mini Truck">Mini Truck</option>
+              <option value="Four Wheeler">Four Wheeler</option>
+              <option value="Two Wheeler">Two Wheeler</option>
 
             </select>
 
           </div>
 
-          <button
-            class="btn primary"
-            onclick="registerEntry()"
-          >
+          <button class="btn primary" onclick="registerEntry()">
             Register Entry
           </button>
 
@@ -528,10 +409,7 @@
           BILLING VIEW
       ========================== -->
 
-      <section
-        id="view-billing"
-        class="view"
-      >
+      <section id="view-billing" class="view">
 
         <div class="card">
 
@@ -547,20 +425,15 @@
               Vehicle Number
             </label>
 
-            <input
-              type="text"
-              id="exitVehicleNum"
-              placeholder="Enter vehicle number"
-            />
+            <input type="text" id="exitVehicleNum" placeholder="Enter vehicle number" />
 
           </div>
 
-          <button
-            class="btn danger"
-            onclick="processExit()"
-          >
+          <button class="btn danger" onclick="processExit()">
             Process Exit
           </button>
+
+          <div id="billingResult"></div>
 
         </div>
 
@@ -570,17 +443,10 @@
           LOGS VIEW
       ========================== -->
 
-      <section
-        id="view-logs"
-        class="view"
-      >
+      <section id="view-logs" class="view">
 
         <div class="card">
 
-          <h2>
-            Parking Logs
-          </h2>
-
           <br />
 
           <h2>
@@ -589,45 +455,23 @@
 
           <br />
 
-          <div
-            style="
-              display:flex;
-              gap:16px;
-              margin-bottom:20px;
-            "
-          >
+          <div style="display:flex; gap:16px; margin-bottom:20px;">
 
-            <input
-              type="text"
-              id="searchVehicle"
-              placeholder="Search Vehicle Number"
-            />
+            <input type="text" id="searchVehicle" placeholder="Search Vehicle Number" />
 
             <select id="logStatusFilter">
 
-              <option value="">
-                All Status
-              </option>
-
-              <option value="occupied">
-                Occupied
-              </option>
-
-              <option value="exited">
-                Exited
-              </option>
+              <option value="">All Status</option>
+              <option value="occupied">Occupied</option>
+              <option value="exited">Exited</option>
 
             </select>
 
-            <button
-              class="btn primary"
-              onclick="loadLogs(1)"
-            >
+            <button class="btn primary" onclick="loadLogs(1)">
               Filter
             </button>
 
           </div>
-
 
           <table>
 
@@ -635,33 +479,13 @@
 
               <tr>
 
-                <th>
-                  Vehicle
-                </th>
-
-                <th>
-                  Slot
-                </th>
-
-                <th>
-                  Entry Time
-                </th>
-
-                <th>
-                  Exit Time
-                </th>
-
-                <th>
-                  Duration
-                </th>
-
-                <th>
-                  Fee
-                </th>
-
-                <th>
-                  Status
-                </th>
+                <th>Vehicle</th>
+                <th>Slot</th>
+                <th>Entry Time</th>
+                <th>Exit Time</th>
+                <th>Duration</th>
+                <th>Fee</th>
+                <th>Status</th>
 
               </tr>
 
@@ -675,10 +499,12 @@
 
       </section>
 
-    </main>
+    </div>
 
-    <script src="/frontend/script.js"></script>
+  </main>
 
-  </body>
+  <script src="/frontend/script.js"></script>
 
-  </html>
+</body>
+
+</html>

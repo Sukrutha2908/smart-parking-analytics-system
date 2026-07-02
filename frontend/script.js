@@ -516,55 +516,91 @@ loadVehicleDistribution();
 
 async function registerEntry() {
 
-    const vehicle_number =
-        document.getElementById('vehicleNum')
-            .value
-            .trim()
-            .toUpperCase();
+    const vehicleNumber =
+        document.getElementById(
+            "vehicleNum"
+        ).value
+        .trim()
+        .toUpperCase();
 
-    const vehicle_type =
-        document.getElementById('vehicleType')
-            .value;
+    const vehicleType =
+        document.getElementById(
+            "vehicleType"
+        ).value;
 
-    if (!vehicle_number || !vehicle_type) {
+    if (!vehicleNumber || !vehicleType) {
 
-        showAlert(
-            'Enter vehicle details',
-            'error'
+        alert(
+            "Please enter vehicle number and select vehicle type"
         );
 
         return;
     }
 
-    const { ok, data } =
-        await api('/entry', {
+    try {
 
-            method: 'POST',
+        const response = await fetch(
 
-            body: JSON.stringify({
+            "http://127.0.0.1:8000/entry",
 
-                vehicle_number,
-                vehicle_type
-            })
-        });
+            {
+                method: "POST",
 
-    if (!ok) {
+                headers: {
+                    "Content-Type": "application/json"
+                },
 
-        showAlert(
-            data.detail || 'Error',
-            'error'
+                body: JSON.stringify({
+
+                    vehicle_number: vehicleNumber,
+
+                    vehicle_type: vehicleType
+                })
+            }
         );
 
-        return;
+        const data = await response.json();
+
+        console.log(data);
+
+        if (data.error || data.detail) {
+
+            alert(
+                data.error || data.detail
+            );
+
+            return;
+        }
+
+        alert(
+            `Vehicle Registered Successfully
+Slot Allocated: ${data.slot_allocated}`
+        );
+
+        // Clear fields
+
+        document.getElementById(
+            "vehicleNum"
+        ).value = "";
+
+        document.getElementById(
+            "vehicleType"
+        ).value = "";
+
+        // Reload dashboard
+
+        loadDashboardData();
+
+        loadSlots();
+
+        loadLogs();
+
+    } catch (error) {
+
+        console.log(error);
+
+        alert("Entry Failed");
     }
-
-    showAlert(
-        `Allocated ${data.slot_allocated}`
-    );
-
-    loadDashboardData();
-
-    loadSlots();
 }
 
 /* =========================================
@@ -611,6 +647,63 @@ async function processExit() {
 
     showAlert(data.message);
 
+    document.getElementById(
+        "billingResult"
+    ).innerHTML = `
+
+        <div class="bill-card">
+
+            <h2>Billing Details</h2>
+
+            <br>
+
+            <p>
+                <strong>Vehicle Number:</strong>
+                ${data.vehicle_number}
+            </p>
+
+            <p>
+                <strong>Slot ID:</strong>
+                ${data.slot_id}
+            </p>
+
+            <p>
+                <strong>Floor:</strong>
+                ${data.floor}
+            </p>
+
+            <p>
+                <strong>Entry Time:</strong>
+                ${formatTime(data.entry_time)}
+            </p>
+
+            <p>
+                <strong>Exit Time:</strong>
+                ${formatTime(data.exit_time)}
+            </p>
+
+            <p>
+                <strong>Duration:</strong>
+                ${data.duration_minutes} mins
+            </p>
+
+            <p>
+                <strong>Rate:</strong>
+                ₹${data.rate_per_hour}/hour
+            </p>
+
+            <h3 style="margin-top:15px;">
+                Total Fee: ₹${data.fee}
+            </h3>
+
+            <p>
+                <strong>Billing ID:</strong>
+                ${data.billing_id}
+            </p>
+
+    </div>
+`;
+
     loadDashboardData();
 
     loadSlots();
@@ -622,9 +715,17 @@ async function processExit() {
 
 async function loadLogs(page = 1) {
 
-    const { ok, data } =
-        await api(`/logs?page=${page}&limit=50`);
+    const search =
+        document.getElementById('searchVehicle')?.value || '';
 
+    const status =
+        document.getElementById('logStatusFilter')?.value || '';
+
+    const { ok, data } =
+        await api(
+            `/logs?page=${page}&limit=50&vehicle_number=${search}&status=${status}`
+        );
+        
     if (!ok) return;
 
     const tbody =
