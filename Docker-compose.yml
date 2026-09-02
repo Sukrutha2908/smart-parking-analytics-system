@@ -46,6 +46,8 @@ services:
     container_name: smart-parking-api
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     depends_on:
       - mongodb
       - kafka
@@ -56,16 +58,21 @@ services:
       context: .
       dockerfile: Dockerfile.simulator
     container_name: simulator
+    environment:
+      MONGODB_URL: ${MONGODB_URL}
+      DATABASE_NAME: ${DATABASE_NAME}
     depends_on:
       - kafka
       - mongodb
-
 
   consumer:
     build:
       context: .
       dockerfile: Dockerfile.consumer
     container_name: consumer
+    environment:
+      MONGODB_URL: ${MONGODB_URL}
+      DATABASE_NAME: ${DATABASE_NAME}
     depends_on:
       - kafka
       - mongodb

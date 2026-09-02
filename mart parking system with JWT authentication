@@ -1,0 +1,24 @@
+ Docker-compose.yml            |   9 [32m+[m[31m-[m
+ Dockerfile                    |  13 [31m-[m
+ Dockerfile.consumer           |   2 [32m+[m[31m-[m
+ Dockerfile.simulator          |   2 [32m+[m[31m-[m
+ app/auth_utils.py             | 115 [32m+++++[m
+ app/main.py                   | 921 [32m++++++++++++++++++++++++++++[m[31m-----------[m
+ app/models/auth_model.py      | 125 [32m++++++[m
+ app/mongodb.py                |   3 [32m+[m
+ app/routers/analytics.py      | 543 [32m+++++++++++++++++++++[m[31m--[m
+ app/routers/auth.py           | 275 [32m++++++++++++[m
+ app/routers/logs.py           | 114 [32m++++[m[31m-[m
+ frontend/auth.css             | 466 [32m++++++++++++++++++++[m
+ frontend/forgot-password.html | 258 [32m+++++++++++[m
+ frontend/index.html           | 271 [32m+++++++++++[m[31m-[m
+ frontend/login.html           | 296 [32m+++++++++++++[m
+ frontend/reset-password.html  | 617 [32m++++++++++++++++++++++++++[m
+ frontend/script.css           | 978 [32m++++++++++++++++++++++[m[31m--------------------[m
+ frontend/script.js            | 444 [32m+++++++++++++[m[31m------[m
+ frontend/signup.html          | 694 [32m++++++++++++++++++++++++++++++[m
+ requirements.txt              | Bin [31m1010[m -> [32m1122[m bytes
+ services/kafka_consumer.py    | 523 [32m++++++++++++++++++++++[m
+ services/simulator.py         | 197 [32m+++++++[m[31m--[m
+ templates/dashboard.html      | 866 [32m++++++++++[m[31m---------------------------[m
+ 23 files changed, 6139 insertions(+), 1593 deletions(-)

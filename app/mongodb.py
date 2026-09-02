@@ -31,3 +31,6 @@ billing_collection = db["billing"]
 transaction_collection = db["transactions"]
 log_collection = db["parking_logs"]
 print("MongoDB Connected Successfully")
+
+users_collection = db["users"]
+print("MongoDB Connected Successfully")

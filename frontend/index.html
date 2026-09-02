@@ -1,1 +1,270 @@
-Sgit add .
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Parking Dashboard</title>
+  <link rel="stylesheet" href="/static/script.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- alert / toast -->
+  <div id="alertBox" class="alert hidden"></div>
+
+  <!-- =========================
+       SIDEBAR
+  ========================== -->
+  <aside class="sidebar">
+
+    <div class="brand">
+      <div class="logo-box">P</div>
+      <div>
+        <div class="brand-name">Smart Parking</div>
+        <div class="brand-sub">Multi-level facility</div>
+      </div>
+    </div>
+
+    <nav>
+      <button class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-view="slots">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 8h4a2.5 2.5 0 0 1 0 5H9V8Zm0 5v4"/></svg>
+        Slots
+      </button>
+      <button class="nav-item" data-view="entry">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v13"/><path d="m6 12 6 6 6-6"/><path d="M5 21h14"/></svg>
+        Vehicle entry
+      </button>
+      <button class="nav-item" data-view="billing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20V7"/><path d="m18 11-6-6-6 6"/><path d="M5 3h14"/></svg>
+        Exit &amp; billing
+      </button>
+      <button class="nav-item" data-view="logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        Parking logs
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="meter">
+        <span class="meter-label">Rate</span>
+        <span class="meter-value">₹20 / hour</span>
+      </div>
+      <div class="meter">
+        <span class="meter-label">Total capacity</span>
+        <span class="meter-value">500 slots</span>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- =========================
+       MAIN
+  ========================== -->
+  <main class="main">
+
+    <header class="top-header">
+      <div>
+        <h1>Dashboard</h1>
+        <p>Monitor parking activity and analytics in real time</p>
+      </div>
+      <div class="header-meta">
+        <div class="conn-status" id="connStatus">
+          <span class="conn-dot"></span>
+          <span id="connStatusLabel">Connecting…</span>
+        </div>
+        <div class="header-date" id="currentDate"></div>
+      </div>
+    </header>
+
+    <!-- =========================
+         DASHBOARD VIEW
+    ========================== -->
+    <section id="view-dashboard" class="view active">
+
+      <div class="stats-bar">
+        <div class="stat-card">
+          <span class="stat-label">Total slots</span>
+          <h2 id="statTotal" class="stat-value">0</h2>
+        </div>
+        <div class="stat-card is-free">
+          <span class="stat-label">Available</span>
+          <h2 id="statFree" class="stat-value green">0</h2>
+        </div>
+        <div class="stat-card is-occ">
+          <span class="stat-label">Occupied</span>
+          <h2 id="statOcc" class="stat-value red">0</h2>
+        </div>
+        <div class="stat-card is-pct">
+          <span class="stat-label">Occupancy</span>
+          <h2 id="statPct" class="stat-value blue">0%</h2>
+        </div>
+      </div>
+
+      <div class="analytics-layout">
+
+        <div class="analytics-card large-card">
+          <h3>Occupancy by floor</h3>
+          <div class="floor-grid" id="floorGrid"></div>
+        </div>
+
+        <div class="bottom-charts">
+
+          <div class="analytics-card small-card">
+            <div class="card-head">
+              <h3>Weekly revenue</h3>
+              <select id="weekFilter" class="filter-select">
+                <option value="current">Current week</option>
+                <option value="last">Last week</option>
+                <option value="month">This month</option>
+              </select>
+            </div>
+            <div class="chart-box">
+              <canvas id="revenueChart"></canvas>
+            </div>
+          </div>
+
+          <div class="analytics-card small-card">
+            <h3>Vehicle distribution</h3>
+            <div class="vehicle-stats">
+              <div>
+                <div class="vehicle-row"><span>Cars</span><strong id="carPercent">0%</strong></div>
+                <div class="vehicle-bar"><div id="carBar" class="vehicle-fill blue" style="width:0%"></div></div>
+              </div>
+              <div>
+                <div class="vehicle-row"><span>Bikes</span><strong id="bikePercent">0%</strong></div>
+                <div class="vehicle-bar"><div id="bikeBar" class="vehicle-fill green" style="width:0%"></div></div>
+              </div>
+              <div>
+                <div class="vehicle-row"><span>Trucks</span><strong id="truckPercent">0%</strong></div>
+                <div class="vehicle-bar"><div id="truckBar" class="vehicle-fill orange" style="width:0%"></div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         SLOTS VIEW
+    ========================== -->
+    <section id="view-slots" class="view">
+      <div class="card">
+        <h2>Parking slots</h2>
+        <p class="card-sub">Live status of every bay across the facility</p>
+
+        <div class="toolbar">
+          <select id="floorFilter" class="filter-select">
+            <option value="all">All floors</option>
+            <option value="B1">B1</option>
+            <option value="B2">B2</option>
+            <option value="L1">L1</option>
+            <option value="L2">L2</option>
+            <option value="L3">L3</option>
+          </select>
+          <select id="statusFilter" class="filter-select">
+            <option value="all">All status</option>
+            <option value="free">Free</option>
+            <option value="occupied">Occupied</option>
+          </select>
+          <div class="slot-legend">
+            <span><span class="legend-dot free"></span>Free</span>
+            <span><span class="legend-dot occupied"></span>Occupied</span>
+          </div>
+        </div>
+
+        <div id="slotGrid" class="slot-grid"></div>
+      </div>
+    </section>
+
+    <!-- =========================
+         ENTRY VIEW
+    ========================== -->
+    <section id="view-entry" class="view">
+      <div class="card">
+        <h2>Register vehicle entry</h2>
+        <p class="card-sub">Assign an incoming vehicle to the next open slot</p>
+
+        <div class="form-row">
+          <label for="vehicleNum">Vehicle number</label>
+          <input type="text" id="vehicleNum" placeholder="e.g. AP39AB1234" />
+        </div>
+
+        <div class="form-row">
+          <label for="vehicleType">Vehicle type</label>
+          <select id="vehicleType">
+            <option value="">Select vehicle type</option>
+            <option value="Large Vehicle">Large vehicle</option>
+            <option value="Mini Truck">Mini truck</option>
+            <option value="Four Wheeler">Four wheeler</option>
+            <option value="Two Wheeler">Two wheeler</option>
+          </select>
+        </div>
+
+        <button class="btn primary" onclick="registerEntry()">Register entry</button>
+      </div>
+    </section>
+
+    <!-- =========================
+         BILLING VIEW
+    ========================== -->
+    <section id="view-billing" class="view">
+      <div class="card">
+        <h2>Vehicle exit &amp; billing</h2>
+        <p class="card-sub">Close out a stay and generate the fee receipt</p>
+
+        <div class="form-row">
+          <label for="exitVehicleNum">Vehicle number</label>
+          <input type="text" id="exitVehicleNum" placeholder="Enter vehicle number" />
+        </div>
+
+        <button class="btn danger" onclick="processExit()">Process exit</button>
+
+        <div id="billingResult"></div>
+      </div>
+    </section>
+
+    <!-- =========================
+         LOGS VIEW
+    ========================== -->
+    <section id="view-logs" class="view">
+      <div class="card">
+        <h2>Parking logs</h2>
+        <p class="card-sub">Search and review entry / exit history</p>
+
+        <div class="toolbar">
+          <input type="text" id="searchVehicle" placeholder="Search vehicle number" style="max-width:220px" />
+          <select id="logStatusFilter" class="filter-select">
+            <option value="">All status</option>
+            <option value="occupied">Occupied</option>
+            <option value="exited">Exited</option>
+          </select>
+          <button class="btn primary" onclick="loadLogs(1)">Filter</button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Vehicle</th>
+              <th>Slot</th>
+              <th>Entry time</th>
+              <th>Exit time</th>
+              <th>Duration</th>
+              <th>Fee</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="logsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
