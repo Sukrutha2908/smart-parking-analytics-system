@@ -75,6 +75,9 @@ app.mount(
 # =========================================================
 # AUTHENTICATION PAGES
 # =========================================================
+@app.get("/logout")
+async def logout_page():
+    return FileResponse("frontend/logout.html")
 
 @app.get("/login")
 def login_page():

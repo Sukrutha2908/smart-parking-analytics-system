@@ -590,6 +590,10 @@ async function loadFloorOccupancy() {
    VEHICLE DISTRIBUTION
 ========================================= */
 
+/* =========================================
+   VEHICLE DISTRIBUTION
+========================================= */
+
 async function loadVehicleDistribution() {
 
     try {
@@ -607,35 +611,99 @@ async function loadVehicleDistribution() {
             return;
         }
 
+
         /*
-         * Backend already returns percentages:
+         * Backend returns VEHICLE COUNTS:
          *
          * {
-         *   cars: 14,
-         *   bikes: 57,
-         *   trucks: 29
+         *   cars: 87,
+         *   bikes: 162,
+         *   trucks: 185
          * }
+         *
+         * We calculate the percentages here.
          */
 
-        const carPercent =
+
+        const cars =
             Number(data.cars) || 0;
 
-        const bikePercent =
+        const bikes =
             Number(data.bikes) || 0;
 
-        const truckPercent =
+        const trucks =
             Number(data.trucks) || 0;
 
+
+        /* ================================
+           TOTAL VEHICLES
+        ================================= */
+
+        const total =
+            cars + bikes + trucks;
+
+
+        /* ================================
+           CALCULATE PERCENTAGES
+        ================================= */
+
+        let carPercent = 0;
+        let bikePercent = 0;
+        let truckPercent = 0;
+
+
+        if (total > 0) {
+
+            carPercent =
+                Math.round(
+                    (cars / total) * 100
+                );
+
+            bikePercent =
+                Math.round(
+                    (bikes / total) * 100
+                );
+
+            truckPercent =
+                Math.round(
+                    (trucks / total) * 100
+                );
+
+
+            /*
+             * Make sure rounded values
+             * always add up to exactly 100%.
+             */
+
+            const roundedTotal =
+                carPercent +
+                bikePercent +
+                truckPercent;
+
+
+            if (roundedTotal !== 100) {
+
+                truckPercent +=
+                    100 - roundedTotal;
+            }
+        }
+
+
+        /* ================================
+           UPDATE TEXT
+        ================================= */
 
         document.getElementById(
             "carPercent"
         ).innerText =
             `${carPercent}%`;
 
+
         document.getElementById(
             "bikePercent"
         ).innerText =
             `${bikePercent}%`;
+
 
         document.getElementById(
             "truckPercent"
@@ -643,20 +711,46 @@ async function loadVehicleDistribution() {
             `${truckPercent}%`;
 
 
+        /* ================================
+           UPDATE PROGRESS BARS
+        ================================= */
+
         document.getElementById(
             "carBar"
         ).style.width =
             `${carPercent}%`;
+
 
         document.getElementById(
             "bikeBar"
         ).style.width =
             `${bikePercent}%`;
 
+
         document.getElementById(
             "truckBar"
         ).style.width =
             `${truckPercent}%`;
+
+
+        /* ================================
+           DEBUG
+        ================================= */
+
+        console.log(
+            "Vehicle distribution:",
+            {
+                cars,
+                bikes,
+                trucks,
+                total,
+                percentages: {
+                    cars: carPercent,
+                    bikes: bikePercent,
+                    trucks: truckPercent
+                }
+            }
+        );
 
 
     } catch (error) {
@@ -665,6 +759,7 @@ async function loadVehicleDistribution() {
             "Vehicle distribution error:",
             error
         );
+
     }
 }
 

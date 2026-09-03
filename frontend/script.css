@@ -786,3 +786,41 @@ input[type="text"]::placeholder { color: #A6ADBC; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* =========================================
+   LOGOUT BUTTON
+========================================= */
+
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    width: 100%;
+    padding: 12px 16px;
+    margin-top: 18px;
+
+    border-radius: 10px;
+
+    color: #dc2626;
+    background: transparent;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.logout-button span:first-child {
+    font-size: 19px;
+    line-height: 1;
+}
+
+.logout-button:hover {
+    background: #fef2f2;
+    color: #b91c1c;
+}

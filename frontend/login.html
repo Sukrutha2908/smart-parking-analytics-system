@@ -8,19 +8,32 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Smart Parking - Login</title>
+    <title>Smart Parking | Login</title>
 
     <style>
 
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
 
-            margin: 0;
-
             min-height: 100vh;
+
+            font-family:
+                "Segoe UI",
+                Arial,
+                sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #0f172a 0%,
+                    #172554 50%,
+                    #1e3a8a 100%
+                );
 
             display: flex;
 
@@ -28,180 +41,1067 @@
 
             align-items: center;
 
-            background: #f1f5f9;
+            padding: 25px;
 
-            font-family:
-                Arial,
-                sans-serif;
+            color: #0f172a;
         }
 
-        .login-card {
 
-            width: 400px;
+        /* ================================
+           MAIN CONTAINER
+        ================================= */
+
+        .login-container {
+
+            width: 100%;
+
+            max-width: 1050px;
+
+            min-height: 620px;
 
             background: white;
 
-            padding: 40px;
+            border-radius: 28px;
 
-            border-radius: 16px;
+            overflow: hidden;
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
 
             box-shadow:
-                0 10px 30px
-                rgba(0,0,0,0.1);
+                0 30px 70px
+                rgba(0, 0, 0, 0.30);
         }
 
-        h1 {
 
-            margin-top: 0;
+        /* ================================
+           LEFT PANEL
+        ================================= */
 
-            text-align: center;
+        .brand-panel {
 
-            color: #111827;
+            position: relative;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #0f172a,
+                    #172554,
+                    #1d4ed8
+                );
+
+            color: white;
+
+            padding: 55px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+            overflow: hidden;
         }
 
-        .subtitle {
 
-            text-align: center;
+        .brand-panel::before {
+
+            content: "";
+
+            position: absolute;
+
+            width: 350px;
+
+            height: 350px;
+
+            border-radius: 50%;
+
+            background:
+                rgba(59, 130, 246, 0.18);
+
+            top: -150px;
+
+            right: -120px;
+        }
+
+
+        .brand-panel::after {
+
+            content: "";
+
+            position: absolute;
+
+            width: 280px;
+
+            height: 280px;
+
+            border-radius: 50%;
+
+            background:
+                rgba(96, 165, 250, 0.10);
+
+            bottom: -120px;
+
+            left: -100px;
+        }
+
+
+        .brand {
+
+            position: relative;
+
+            z-index: 2;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 14px;
+        }
+
+
+        .brand-icon {
+
+            width: 48px;
+
+            height: 48px;
+
+            border-radius: 14px;
+
+            background:
+                rgba(255, 255, 255, 0.14);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 25px;
+
+            border:
+                1px solid
+                rgba(255,255,255,0.2);
+        }
+
+
+        .brand-name {
+
+            font-size: 21px;
+
+            font-weight: 700;
+
+            letter-spacing: 0.3px;
+        }
+
+
+        .brand-content {
+
+            position: relative;
+
+            z-index: 2;
+
+            margin-top: 40px;
+        }
+
+
+        .brand-content h1 {
+
+            font-size: 43px;
+
+            line-height: 1.12;
+
+            margin-bottom: 20px;
+
+            letter-spacing: -1px;
+        }
+
+
+        .brand-content h1 span {
+
+            color: #60a5fa;
+        }
+
+
+        .brand-content p {
+
+            color: #cbd5e1;
+
+            font-size: 16px;
+
+            line-height: 1.7;
+
+            max-width: 420px;
+        }
+
+
+        /* ================================
+           PARKING VISUAL
+        ================================= */
+
+        .parking-visual {
+
+            position: relative;
+
+            z-index: 2;
+
+            margin-top: 35px;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+        }
+
+
+        .parking-card {
+
+            width: 310px;
+
+            height: 155px;
+
+            border-radius: 20px;
+
+            background:
+                rgba(255,255,255,0.09);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.15);
+
+            backdrop-filter: blur(10px);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            position: relative;
+        }
+
+
+        .parking-icon {
+
+            font-size: 76px;
+
+            filter:
+                drop-shadow(
+                    0 10px 20px
+                    rgba(0,0,0,0.25)
+                );
+        }
+
+
+        .status-badge {
+
+            position: absolute;
+
+            right: 15px;
+
+            top: 15px;
+
+            background: #16a34a;
+
+            color: white;
+
+            padding: 7px 12px;
+
+            border-radius: 20px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            letter-spacing: 0.5px;
+        }
+
+
+        .panel-footer {
+
+            position: relative;
+
+            z-index: 2;
+
+            color: #94a3b8;
+
+            font-size: 12px;
+        }
+
+
+        /* ================================
+           RIGHT PANEL
+        ================================= */
+
+        .form-panel {
+
+            padding: 55px 65px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+        }
+
+
+        .form-wrapper {
+
+            width: 100%;
+
+            max-width: 390px;
+        }
+
+
+        .welcome {
+
+            margin-bottom: 35px;
+        }
+
+
+        .welcome h2 {
+
+            font-size: 31px;
+
+            margin-bottom: 9px;
+
+            color: #0f172a;
+        }
+
+
+        .welcome p {
 
             color: #64748b;
 
-            margin-bottom: 30px;
+            font-size: 14px;
         }
+
+
+        /* ================================
+           FORM
+        ================================= */
+
+        .form-group {
+
+            margin-bottom: 21px;
+        }
+
 
         label {
 
             display: block;
 
-            margin-bottom: 8px;
+            font-size: 13px;
 
             font-weight: 600;
+
+            color: #334155;
+
+            margin-bottom: 8px;
         }
+
+
+        .input-wrapper {
+
+            position: relative;
+        }
+
+
+        .input-icon {
+
+            position: absolute;
+
+            left: 15px;
+
+            top: 50%;
+
+            transform:
+                translateY(-50%);
+
+            font-size: 17px;
+
+            color: #94a3b8;
+
+            pointer-events: none;
+        }
+
 
         input {
 
             width: 100%;
 
-            padding: 12px;
+            height: 50px;
 
-            margin-bottom: 18px;
+            padding:
+                0 15px 0 45px;
 
-            border: 1px solid #cbd5e1;
+            border:
+                1px solid #cbd5e1;
 
-            border-radius: 8px;
+            border-radius: 11px;
 
-            font-size: 15px;
+            outline: none;
+
+            font-size: 14px;
+
+            color: #0f172a;
+
+            background: #f8fafc;
+
+            transition:
+                0.2s ease;
         }
 
-        button {
 
-            width: 100%;
+        input:focus {
 
-            padding: 13px;
+            border-color: #2563eb;
+
+            background: white;
+
+            box-shadow:
+                0 0 0 4px
+                rgba(37,99,235,0.10);
+        }
+
+
+        input::placeholder {
+
+            color: #94a3b8;
+        }
+
+
+        /* ================================
+           PASSWORD
+        ================================= */
+
+        #password {
+
+            padding-right: 70px;
+        }
+
+
+        #togglePassword {
+
+            position: absolute;
+
+            right: 10px;
+
+            top: 50%;
+
+            transform:
+                translateY(-50%);
 
             border: none;
 
-            border-radius: 8px;
+            background: transparent;
 
-            background: #2563eb;
+            color: #2563eb;
 
-            color: white;
-
-            font-size: 16px;
+            font-size: 12px;
 
             font-weight: 600;
 
             cursor: pointer;
+
+            padding: 7px;
+
+            width: auto;
         }
 
-        button:hover {
 
-            background: #1d4ed8;
+        #togglePassword:hover {
+
+            color: #1d4ed8;
         }
+
+
+        /* ================================
+           OPTIONS
+        ================================= */
+
+        .form-options {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-top: -5px;
+
+            margin-bottom: 25px;
+
+            font-size: 12px;
+        }
+
+
+        .remember {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 7px;
+
+            color: #64748b;
+
+            cursor: pointer;
+        }
+
+
+        .remember input {
+
+            width: 15px;
+
+            height: 15px;
+
+            accent-color: #2563eb;
+
+            cursor: pointer;
+        }
+
+
+        .forgot-link {
+
+            color: #2563eb;
+
+            text-decoration: none;
+
+            font-weight: 600;
+        }
+
+
+        .forgot-link:hover {
+
+            text-decoration: underline;
+        }
+
+
+        /* ================================
+           LOGIN BUTTON
+        ================================= */
+
+        .login-button {
+
+            width: 100%;
+
+            height: 51px;
+
+            border: none;
+
+            border-radius: 11px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #1d4ed8
+                );
+
+            color: white;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition:
+                0.2s ease;
+
+            box-shadow:
+                0 8px 18px
+                rgba(37,99,235,0.25);
+        }
+
+
+        .login-button:hover {
+
+            transform:
+                translateY(-1px);
+
+            box-shadow:
+                0 12px 25px
+                rgba(37,99,235,0.30);
+        }
+
+
+        .login-button:active {
+
+            transform:
+                translateY(0);
+        }
+
+
+        /* ================================
+           MESSAGE
+        ================================= */
 
         #message {
+
+            min-height: 20px;
 
             margin-top: 15px;
 
             text-align: center;
 
+            font-size: 13px;
+
             color: #dc2626;
+        }
+
+
+        /* ================================
+           SIGNUP
+        ================================= */
+
+        .signup-text {
+
+            text-align: center;
+
+            margin-top: 27px;
+
+            color: #64748b;
+
+            font-size: 13px;
+        }
+
+
+        .signup-text a {
+
+            color: #2563eb;
+
+            text-decoration: none;
+
+            font-weight: 700;
+
+            margin-left: 4px;
+        }
+
+
+        .signup-text a:hover {
+
+            text-decoration: underline;
+        }
+
+
+        /* ================================
+           SECURITY TEXT
+        ================================= */
+
+        .security-note {
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            gap: 6px;
+
+            margin-top: 30px;
+
+            color: #94a3b8;
+
+            font-size: 11px;
+        }
+
+
+        /* ================================
+           RESPONSIVE
+        ================================= */
+
+        @media (max-width: 850px) {
+
+            .login-container {
+
+                grid-template-columns: 1fr;
+
+                max-width: 520px;
+            }
+
+
+            .brand-panel {
+
+                min-height: 300px;
+
+                padding: 35px;
+            }
+
+
+            .brand-content {
+
+                margin-top: 25px;
+            }
+
+
+            .brand-content h1 {
+
+                font-size: 32px;
+            }
+
+
+            .parking-visual {
+
+                display: none;
+            }
+
+
+            .panel-footer {
+
+                margin-top: 30px;
+            }
+
+
+            .form-panel {
+
+                padding: 45px 40px;
+            }
+        }
+
+
+        @media (max-width: 500px) {
+
+            body {
+
+                padding: 12px;
+            }
+
+
+            .login-container {
+
+                border-radius: 20px;
+            }
+
+
+            .brand-panel {
+
+                padding: 30px 25px;
+            }
+
+
+            .form-panel {
+
+                padding: 35px 25px;
+            }
+
+
+            .brand-content h1 {
+
+                font-size: 28px;
+            }
+
+
+            .welcome h2 {
+
+                font-size: 27px;
+            }
         }
 
     </style>
 
 </head>
 
+
 <body>
 
-    <div class="login-card">
 
-        <h1>Smart Parking</h1>
+    <div class="login-container">
 
-        <p class="subtitle">
-            Login to your dashboard
-        </p>
 
-        <form id="loginForm">
+        <!-- =================================
+             LEFT BRAND PANEL
+        ================================== -->
 
-            <label>
-                Username
-            </label>
+        <section class="brand-panel">
 
-            <input
-                type="text"
-                id="username"
-                required
-            >
 
-            <label>
-                Password
-            </label>
+            <div>
 
-            <div style="position: relative;">
+                <div class="brand">
 
-                <input
-                    type="password"
-                    id="password"
-                    required
-                    style="padding-right: 70px;"
-                >
+                    <div class="brand-icon">
+                        🅿️
+                    </div>
 
-                <button
-                    type="button"
-                    id="togglePassword"
-                    style="
-                        position: absolute;
-                        right: 8px;
-                        top: 5px;
-                        width: auto;
-                        padding: 8px 10px;
-                        background: transparent;
-                        color: #2563eb;
-                        font-size: 13px;
-                    "
-                >
-                    Show
-                </button>
+                    <div class="brand-name">
+                        Smart Parking
+                    </div>
+
+                </div>
+
+
+                <div class="brand-content">
+
+                    <h1>
+                        Smarter parking.<br>
+                        <span>Better management.</span>
+                    </h1>
+
+                    <p>
+                        Monitor parking occupancy, manage
+                        vehicles, track transactions and
+                        analyze parking activity in real time.
+                    </p>
+
+
+                    <div class="parking-visual">
+
+                        <div class="parking-card">
+
+                            <div class="parking-icon">
+                                🚗
+                            </div>
+
+                            <div class="status-badge">
+                                SYSTEM ONLINE
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
 
-            <button type="submit">
-                Login
-            </button>
 
-        </form>
+            <div class="panel-footer">
 
-        <div id="message"></div>
+                Real-time Parking Analytics Platform
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================
+             LOGIN FORM
+        ================================== -->
+
+        <section class="form-panel">
+
+
+            <div class="form-wrapper">
+
+
+                <div class="welcome">
+
+                    <h2>
+                        Welcome back 👋
+                    </h2>
+
+                    <p>
+                        Sign in to access your parking dashboard.
+                    </p>
+
+                </div>
+
+
+                <form id="loginForm">
+
+
+                    <!-- USERNAME -->
+
+                    <div class="form-group">
+
+                        <label for="username">
+                            Username
+                        </label>
+
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                👤
+                            </span>
+
+                            <input
+                                type="text"
+                                id="username"
+                                placeholder="Enter your username"
+                                autocomplete="username"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- PASSWORD -->
+
+                    <div class="form-group">
+
+                        <label for="password">
+                            Password
+                        </label>
+
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                🔒
+                            </span>
+
+                            <input
+                                type="password"
+                                id="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+
+                            <button
+                                type="button"
+                                id="togglePassword"
+                            >
+                                Show
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- OPTIONS -->
+
+                    <div class="form-options">
+
+
+                        <label class="remember">
+
+                            <input
+                                type="checkbox"
+                                id="rememberMe"
+                            >
+
+                            Remember me
+
+                        </label>
+
+
+                        <a
+                            href="/forgot-password"
+                            class="forgot-link"
+                        >
+                            Forgot password?
+                        </a>
+
+
+                    </div>
+
+
+
+                    <!-- LOGIN -->
+
+                    <button
+                        type="submit"
+                        class="login-button"
+                    >
+                        Sign In
+                    </button>
+
+
+                </form>
+
+
+                <div id="message"></div>
+
+
+                <!-- SIGNUP -->
+
+                <div class="signup-text">
+
+                    Don't have an account?
+
+                    <a href="/signup">
+                        Create an account
+                    </a>
+
+                </div>
+
+
+                <div class="security-note">
+
+                    🔐 Secure JWT Authentication
+
+                </div>
+
+
+            </div>
+
+        </section>
+
 
     </div>
 
 
+
     <script>
+
+
+        /* ================================
+           PASSWORD SHOW / HIDE
+        ================================= */
+
+        const password =
+            document.getElementById(
+                "password"
+            );
+
+        const togglePassword =
+            document.getElementById(
+                "togglePassword"
+            );
+
+
+        togglePassword.addEventListener(
+            "click",
+            function() {
+
+                if (
+                    password.type ===
+                    "password"
+                ) {
+
+                    password.type =
+                        "text";
+
+                    togglePassword.textContent =
+                        "Hide";
+
+                } else {
+
+                    password.type =
+                        "password";
+
+                    togglePassword.textContent =
+                        "Show";
+                }
+
+            }
+        );
+
+
+
+        /* ================================
+           LOGIN
+        ================================= */
 
         const form =
             document.getElementById(
                 "loginForm"
             );
+
 
         form.addEventListener(
             "submit",
@@ -209,15 +1109,18 @@
 
                 event.preventDefault();
 
+
                 const username =
                     document.getElementById(
                         "username"
-                    ).value;
+                    ).value.trim();
 
-                const password =
+
+                const passwordValue =
                     document.getElementById(
                         "password"
                     ).value;
+
 
                 const message =
                     document.getElementById(
@@ -225,7 +1128,12 @@
                     );
 
 
+                message.textContent =
+                    "Signing in...";
+
+
                 try {
+
 
                     const response =
                         await fetch(
@@ -235,18 +1143,23 @@
                                 method: "POST",
 
                                 headers: {
+
                                     "Content-Type":
                                         "application/json"
+
                                 },
 
-                                body: JSON.stringify({
+                                body:
+                                    JSON.stringify({
 
-                                    username:
-                                        username,
+                                        username:
+                                            username,
 
-                                    password:
-                                        password
-                                })
+                                        password:
+                                            passwordValue
+
+                                    })
+
                             }
                         );
 
@@ -259,37 +1172,48 @@
 
                         message.textContent =
                             data.detail ||
-                            "Login failed";
+                            "Invalid username or password.";
 
                         return;
+
                     }
 
 
-                    // Store JWT
+                    /* ========================
+                       STORE JWT
+                    ========================= */
+
                     localStorage.setItem(
                         "access_token",
                         data.access_token
                     );
 
 
-                    // Open dashboard
+                    /* ========================
+                       DASHBOARD
+                    ========================= */
+
                     window.location.href =
                         "/dashboard";
+
 
                 }
 
                 catch (error) {
 
-                    message.textContent =
-                        "Unable to connect to server";
-
                     console.error(error);
+
+
+                    message.textContent =
+                        "Unable to connect to server.";
+
                 }
 
             }
         );
 
     </script>
+
 
 </body>
 

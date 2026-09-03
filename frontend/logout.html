@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Smart Parking | Logout</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        body {
+
+            min-height: 100vh;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            padding: 20px;
+
+            font-family:
+                "Segoe UI",
+                Arial,
+                sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #0f172a,
+                    #172554,
+                    #1e3a8a
+                );
+
+        }
+
+
+        .logout-card {
+
+            width: 100%;
+
+            max-width: 470px;
+
+            background: white;
+
+            border-radius: 24px;
+
+            padding: 50px 45px;
+
+            text-align: center;
+
+            box-shadow:
+                0 30px 70px
+                rgba(0, 0, 0, 0.30);
+
+        }
+
+
+        .icon {
+
+            width: 80px;
+
+            height: 80px;
+
+            margin: 0 auto 25px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background: #eff6ff;
+
+            font-size: 38px;
+
+        }
+
+
+        h1 {
+
+            color: #0f172a;
+
+            font-size: 30px;
+
+            margin-bottom: 12px;
+
+        }
+
+
+        .message {
+
+            color: #64748b;
+
+            font-size: 15px;
+
+            line-height: 1.6;
+
+            margin-bottom: 30px;
+
+        }
+
+
+        .login-button {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            width: 100%;
+
+            height: 50px;
+
+            border-radius: 11px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #1d4ed8
+                );
+
+            color: white;
+
+            text-decoration: none;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            transition: 0.2s ease;
+
+            box-shadow:
+                0 8px 18px
+                rgba(37, 99, 235, 0.25);
+
+        }
+
+
+        .login-button:hover {
+
+            transform:
+                translateY(-1px);
+
+            box-shadow:
+                0 12px 25px
+                rgba(37, 99, 235, 0.30);
+
+        }
+
+
+        .footer {
+
+            margin-top: 25px;
+
+            color: #94a3b8;
+
+            font-size: 11px;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <div class="logout-card">
+
+
+        <div class="icon">
+            👋
+        </div>
+
+
+        <h1>
+            You're signed out
+        </h1>
+
+
+        <p class="message">
+
+            You have been successfully logged out
+            of your Smart Parking account.
+
+            <br>
+
+            Your session has been securely cleared.
+
+        </p>
+
+
+        <a
+            href="/login"
+            class="login-button"
+        >
+            Sign in again
+        </a>
+
+
+        <div class="footer">
+
+            🔐 Smart Parking · Secure Session
+
+        </div>
+
+
+    </div>
+
+
+    <script>
+
+        /*
+         * Remove authentication token
+         */
+
+        localStorage.removeItem(
+            "access_token"
+        );
+
+
+        /*
+         * Also clear session storage
+         */
+
+        sessionStorage.clear();
+
+    </script>
+
+
+</body>
+
+</html>
