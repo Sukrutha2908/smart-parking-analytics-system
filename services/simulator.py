@@ -9,6 +9,19 @@ from app.mongodb import slot_collection
 
 
 # =========================================================
+# VEHICLE TYPES BY FLOOR
+# =========================================================
+
+FLOOR_VEHICLE_TYPE = {
+    "B1": "Large Vehicle",
+    "B2": "Mini Truck",
+    "L1": "Four Wheeler",
+    "L2": "Two Wheeler",
+    "L3": "Two Wheeler"
+}
+
+
+# =========================================================
 # WAIT FOR KAFKA
 # =========================================================
 
@@ -17,16 +30,12 @@ while True:
     try:
 
         producer = KafkaProducer(
-
             bootstrap_servers="kafka:9092",
-
             value_serializer=lambda v:
                 json.dumps(v).encode("utf-8")
         )
 
-        print(
-            "Kafka Connected Successfully"
-        )
+        print("Kafka Connected Successfully")
 
         break
 
@@ -34,10 +43,10 @@ while True:
 
         print(
             "Kafka not ready. "
-            "Retrying in 5 seconds..."
+            "Retrying in 30 seconds..."
         )
 
-        time.sleep(5)
+        time.sleep(30)
 
 
 # =========================================================
@@ -46,170 +55,190 @@ while True:
 
 while True:
 
-    slots = list(
-        slot_collection.find({})
-    )
+    try:
 
-
-    if not slots:
-
-        print(
-            "No parking slots found. "
-            "Retrying in 5 seconds..."
+        slots = list(
+            slot_collection.find({})
         )
 
-        time.sleep(5)
-
-        continue
-
-
-    # Random slot
-
-    slot = random.choice(
-        slots
-    )
-
-
-    slot_id = slot.get(
-        "slot_id"
-    )
-
-    current_status = slot.get(
-        "status",
-        "free"
-    )
-
-
-    # =====================================================
-    # VEHICLE ENTRY
-    # =====================================================
-
-    if current_status == "free":
-
-        vehicle_number = (
-            f"AP39{random.randint(1000, 9999)}"
-        )
-
-
-        # Vehicle type based on floor
-
-        if slot.get("floor") == "B1":
-
-            vehicle_type = "Truck"
-
-        elif slot.get("floor") == "B2":
-
-            vehicle_type = "Truck"
-
-        elif slot.get("floor") == "L1":
-
-            vehicle_type = "Car"
-
-        else:
-
-            vehicle_type = "Bike"
-
-
-        event = {
-
-            "slot_id":
-                slot_id,
-
-            "status":
-                "occupied",
-
-            "vehicle_number":
-                vehicle_number,
-
-            "vehicle_type":
-                vehicle_type,
-
-            "entry_time":
-                time.time()
-        }
-
-
-        print(
-            "Vehicle ENTRY:",
-            event
-        )
-
-
-    # =====================================================
-    # VEHICLE EXIT
-    # =====================================================
-
-    else:
-
-        vehicle_number = slot.get(
-            "vehicle_number"
-        )
-
-        vehicle_type = slot.get(
-            "vehicle_type",
-            "Unknown"
-        )
-
-
-        # If old slot data has no vehicle number,
-        # don't create an incorrect exit event.
-
-        if not vehicle_number:
+        if not slots:
 
             print(
-                f"Slot {slot_id} is occupied "
-                "but has no vehicle number. "
-                "Skipping this cycle."
+                "No parking slots found. "
+                "Retrying in 5 seconds..."
             )
 
-            time.sleep(30)
+            time.sleep(5)
 
             continue
 
 
-        event = {
+        # -------------------------------------------------
+        # Select a random slot
+        # -------------------------------------------------
 
-            "slot_id":
-                slot_id,
+        slot = random.choice(slots)
 
-            "status":
-                "free",
+        slot_id = slot.get("slot_id")
 
-            "vehicle_number":
-                vehicle_number,
+        floor = slot.get("floor")
 
-            "vehicle_type":
-                vehicle_type,
+        current_status = slot.get(
+            "status",
+            "free"
+        )
 
-            "entry_time":
-                time.time()
-        }
+
+        # =================================================
+        # VEHICLE ENTRY
+        # =================================================
+
+        if current_status == "free":
+
+            vehicle_number = (
+                f"AP39{random.randint(1000, 9999)}"
+            )
+
+            vehicle_type = FLOOR_VEHICLE_TYPE.get(
+                floor
+            )
+
+            if not vehicle_type:
+
+                print(
+                    f"Unknown floor {floor}. "
+                    "Skipping..."
+                )
+
+                time.sleep(30)
+
+                continue
+
+
+            event = {
+
+                "slot_id":
+                    slot_id,
+
+                "status":
+                    "occupied",
+
+                "vehicle_number":
+                    vehicle_number,
+
+                "vehicle_type":
+                    vehicle_type,
+
+                "entry_time":
+                    time.time()
+            }
+
+
+            print(
+                "Vehicle ENTRY:",
+                event
+            )
+
+
+        # =================================================
+        # VEHICLE EXIT
+        # =================================================
+
+        else:
+
+            vehicle_number = slot.get(
+                "vehicle_number"
+            )
+
+            vehicle_type = slot.get(
+                "vehicle_type"
+            )
+
+
+            # -------------------------------------------------
+            # Old occupied slots may not have vehicle details
+            # -------------------------------------------------
+
+            if not vehicle_number:
+
+                print(
+                    f"Slot {slot_id} is occupied "
+                    "but has no vehicle number. "
+                    "Skipping this cycle."
+                )
+
+                time.sleep(30)
+
+                continue
+
+
+            # -------------------------------------------------
+            # Fallback vehicle type for old data
+            # -------------------------------------------------
+
+            if not vehicle_type:
+
+                vehicle_type = FLOOR_VEHICLE_TYPE.get(
+                    floor,
+                    "Unknown"
+                )
+
+
+            event = {
+
+                "slot_id":
+                    slot_id,
+
+                "status":
+                    "free",
+
+                "vehicle_number":
+                    vehicle_number,
+
+                "vehicle_type":
+                    vehicle_type,
+
+                "entry_time":
+                    time.time()
+            }
+
+
+            print(
+                "Vehicle EXIT:",
+                event
+            )
+
+
+        # =================================================
+        # SEND EVENT TO KAFKA
+        # =================================================
+
+        producer.send(
+            "parking-events",
+            event
+        )
+
+        producer.flush()
 
 
         print(
-            "Vehicle EXIT:",
+            "Sent:",
             event
         )
 
 
-    # =====================================================
-    # SEND TO KAFKA
-    # =====================================================
+        # =================================================
+        # WAIT BEFORE NEXT EVENT
+        # =================================================
 
-    producer.send(
-        "parking-events",
-        event
-    )
-
-    producer.flush()
+        time.sleep(30)
 
 
-    print(
-        "Sent:",
-        event
-    )
+    except Exception as e:
 
+        print(
+            "SIMULATOR ERROR:",
+            str(e)
+        )
 
-    # Wait 30 seconds
-
-    time.sleep(30)
+        time.sleep(30)

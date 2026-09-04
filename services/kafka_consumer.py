@@ -1,7 +1,8 @@
 import json
 import time
-from datetime import datetime
 import math
+
+from datetime import datetime
 
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
@@ -28,7 +29,9 @@ while True:
             bootstrap_servers="kafka:9092",
 
             value_deserializer=lambda v:
-                json.loads(v.decode("utf-8")),
+                json.loads(
+                    v.decode("utf-8")
+                ),
 
             auto_offset_reset="earliest",
 
@@ -68,6 +71,7 @@ for message in consumer:
             event
         )
 
+
         slot_id = event.get(
             "slot_id"
         )
@@ -84,6 +88,10 @@ for message in consumer:
             "vehicle_type"
         )
 
+
+        # =================================================
+        # VALIDATE EVENT
+        # =================================================
 
         if not slot_id or not status:
 
@@ -120,22 +128,43 @@ for message in consumer:
 
 
         # =================================================
-        # VEHICLE ENTERS
+        # VEHICLE ENTRY
         # =================================================
 
         if status == "occupied":
 
+            if not vehicle_number:
+
+                print(
+                    f"Invalid entry event for "
+                    f"{slot_id}: vehicle number missing"
+                )
+
+                continue
+
+
+            if not vehicle_type:
+
+                print(
+                    f"Invalid entry event for "
+                    f"{slot_id}: vehicle type missing"
+                )
+
+                continue
+
+
             entry_time = datetime.utcnow()
 
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # UPDATE SLOT
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             result = slot_collection.update_one(
 
                 {
-                    "slot_id": slot_id
+                    "slot_id":
+                        slot_id
                 },
 
                 {
@@ -148,7 +177,10 @@ for message in consumer:
                             vehicle_number,
 
                         "vehicle_type":
-                            vehicle_type
+                            vehicle_type,
+
+                        "entry_time":
+                            entry_time
                     }
                 }
             )
@@ -161,9 +193,9 @@ for message in consumer:
             )
 
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # CHECK EXISTING PARKING RECORD
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             existing = parking_collection.find_one(
 
@@ -177,108 +209,120 @@ for message in consumer:
             )
 
 
-            if not existing:
-
-                parking_record = {
-
-                    "vehicle_number":
-                        vehicle_number,
-
-                    "vehicle_type":
-                        vehicle_type,
-
-                    "slot_id":
-                        slot_id,
-
-                    "floor":
-                        floor,
-
-                    "entry_time":
-                        entry_time,
-
-                    "exit_time":
-                        None,
-
-                    "duration_minutes":
-                        None,
-
-                    "fee":
-                        0,
-
-                    "entry_hour":
-                        entry_time.hour,
-
-                    "status":
-                        "occupied"
-                }
-
-
-                parking_collection.insert_one(
-                    parking_record
-                )
-
+            if existing:
 
                 print(
-                    f"Parking record created for "
-                    f"{vehicle_number}"
+                    f"Active parking record already "
+                    f"exists for {slot_id}"
                 )
 
-
-                # -----------------------------------------
-                # CREATE PARKING LOG
-                # -----------------------------------------
-
-                log_record = {
-
-                    "vehicle_number":
-                        vehicle_number,
-
-                    "slot_id":
-                        slot_id,
-
-                    "floor":
-                        floor,
-
-                    "vehicle_type":
-                        vehicle_type,
-
-                    "entry_time":
-                        entry_time,
-
-                    "exit_time":
-                        None,
-
-                    "duration_minutes":
-                        None,
-
-                    "fee":
-                        0,
-
-                    "status":
-                        "occupied"
-                }
+                continue
 
 
-                log_collection.insert_one(
-                    log_record
-                )
+            # -------------------------------------------------
+            # CREATE PARKING RECORD
+            # -------------------------------------------------
+
+            parking_record = {
+
+                "vehicle_number":
+                    vehicle_number,
+
+                "vehicle_type":
+                    vehicle_type,
+
+                "slot_id":
+                    slot_id,
+
+                "floor":
+                    floor,
+
+                "entry_time":
+                    entry_time,
+
+                "exit_time":
+                    None,
+
+                "duration_minutes":
+                    None,
+
+                "fee":
+                    0,
+
+                "entry_hour":
+                    entry_time.hour,
+
+                "status":
+                    "occupied"
+            }
 
 
-                print(
-                    f"Parking log created for "
-                    f"{vehicle_number}"
-                )
+            parking_collection.insert_one(
+                parking_record
+            )
+
+
+            print(
+                f"Parking record created for "
+                f"{vehicle_number}"
+            )
+
+
+            # -------------------------------------------------
+            # CREATE PARKING LOG
+            # -------------------------------------------------
+
+            log_record = {
+
+                "vehicle_number":
+                    vehicle_number,
+
+                "vehicle_type":
+                    vehicle_type,
+
+                "slot_id":
+                    slot_id,
+
+                "floor":
+                    floor,
+
+                "entry_time":
+                    entry_time,
+
+                "exit_time":
+                    None,
+
+                "duration_minutes":
+                    None,
+
+                "fee":
+                    0,
+
+                "status":
+                    "occupied"
+            }
+
+
+            log_collection.insert_one(
+                log_record
+            )
+
+
+            print(
+                f"Parking log created for "
+                f"{vehicle_number}"
+            )
 
 
         # =================================================
-        # VEHICLE EXITS
+        # VEHICLE EXIT
         # =================================================
 
         elif status == "free":
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # FIND ACTIVE PARKING RECORD
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             existing = parking_collection.find_one(
 
@@ -301,9 +345,9 @@ for message in consumer:
                 )
 
 
-                # -----------------------------------------
-                # CALCULATE DURATION
-                # -----------------------------------------
+                # -------------------------------------------------
+                # DURATION
+                # -------------------------------------------------
 
                 if entry_time:
 
@@ -327,16 +371,16 @@ for message in consumer:
                 )
 
 
-                # -----------------------------------------
-                # CALCULATE FEE
+                # -------------------------------------------------
+                # BILLING
                 # ₹20 / HOUR
-                # -----------------------------------------
+                # -------------------------------------------------
 
-                
-
-                fee = math.ceil(
-                    duration_minutes / 60
-                ) * 20
+                fee = (
+                    math.ceil(
+                        duration_minutes / 60
+                    ) * 20
+                )
 
 
                 vehicle_number = existing.get(
@@ -348,9 +392,9 @@ for message in consumer:
                 )
 
 
-                # -----------------------------------------
-                # UPDATE PARKING
-                # -----------------------------------------
+                # -------------------------------------------------
+                # UPDATE PARKING RECORD
+                # -------------------------------------------------
 
                 parking_collection.update_one(
 
@@ -378,17 +422,9 @@ for message in consumer:
                 )
 
 
-                print(
-                    f"Vehicle {vehicle_number} exited. "
-                    f"Duration = "
-                    f"{duration_minutes} mins, "
-                    f"Fee = ₹{fee}"
-                )
-
-
-                # -----------------------------------------
+                # -------------------------------------------------
                 # UPDATE PARKING LOG
-                # -----------------------------------------
+                # -------------------------------------------------
 
                 log_result = log_collection.update_one(
 
@@ -430,20 +466,23 @@ for message in consumer:
                 )
 
 
-                # -----------------------------------------
-                # CREATE BILLING RECORD
-                # -----------------------------------------
+                # -------------------------------------------------
+                # BILLING
+                # -------------------------------------------------
 
                 billing_record = {
 
                     "vehicle_number":
                         vehicle_number,
 
+                    "vehicle_type":
+                        vehicle_type,
+
                     "slot_id":
                         slot_id,
 
-                    "vehicle_type":
-                        vehicle_type,
+                    "floor":
+                        floor,
 
                     "entry_time":
                         entry_time,
@@ -481,9 +520,9 @@ for message in consumer:
                 )
 
 
-            # ---------------------------------------------
+            # -------------------------------------------------
             # FREE SLOT
-            # ---------------------------------------------
+            # -------------------------------------------------
 
             result = slot_collection.update_one(
 
@@ -502,6 +541,9 @@ for message in consumer:
                             None,
 
                         "vehicle_type":
+                            None,
+
+                        "entry_time":
                             None
                     }
                 }
@@ -512,6 +554,13 @@ for message in consumer:
                 f"Updated slot {slot_id} → free "
                 f"(matched={result.matched_count}, "
                 f"modified={result.modified_count})"
+            )
+
+
+        else:
+
+            print(
+                f"Unknown status: {status}"
             )
 
 

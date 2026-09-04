@@ -1,6 +1,17 @@
 'use strict';
 
 /* =========================================
+   AUTHENTICATION GUARD
+========================================= */
+
+const accessToken = localStorage.getItem('access_token');
+
+if (!accessToken) {
+    window.location.replace('/login');
+}
+
+
+/* =========================================
    API
 ========================================= */
 
@@ -8,9 +19,8 @@ const API_BASE = '';
 
 let allSlots = [];
 
-let dashPage = 1;
+const PER_PAGE = 500;
 
-const PER_PAGE = 200;
 
 /* =========================================
    NAVIGATION
@@ -30,26 +40,27 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
         const view = btn.dataset.view;
 
-        document
-            .getElementById('view-' + view)
-            .classList.add('active');
+        const targetView =
+            document.getElementById('view-' + view);
+
+        if (targetView) {
+            targetView.classList.add('active');
+        }
 
         if (view === 'dashboard') {
-
             loadDashboardData();
         }
 
         if (view === 'slots') {
-
             loadSlots();
         }
 
         if (view === 'logs') {
-
             loadLogs(1);
         }
     });
 });
+
 
 /* =========================================
    ALERTS
@@ -69,11 +80,10 @@ function showAlert(message, type = 'success') {
     box.classList.remove('hidden');
 
     setTimeout(() => {
-
         box.classList.add('hidden');
-
     }, 3000);
 }
+
 
 /* =========================================
    API HELPER
@@ -83,26 +93,63 @@ async function api(path, options = {}) {
 
     try {
 
-        const response = await fetch(
-            API_BASE + path,
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                ...options
-            }
-        );
+        const token =
+            localStorage.getItem('access_token');
 
-        const data = await response.json();
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        };
+
+        if (token) {
+
+            headers['Authorization'] =
+                `Bearer ${token}`;
+        }
+
+        const response =
+            await fetch(
+                API_BASE + path,
+                {
+                    ...options,
+                    headers
+                }
+            );
+
+
+        /* JWT expired / invalid */
+
+        if (response.status === 401) {
+
+            localStorage.removeItem(
+                'access_token'
+            );
+
+            window.location.replace('/login');
+
+            return {
+                ok: false,
+                data: null
+            };
+        }
+
+
+        const data =
+            await response.json();
+
 
         return {
             ok: response.ok,
             data
         };
 
+
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            'API Error:',
+            error
+        );
 
         return {
             ok: false,
@@ -111,40 +158,75 @@ async function api(path, options = {}) {
     }
 }
 
+
 /* =========================================
    COUNT-UP ANIMATION
-   (one deliberate motion moment for stat values)
 ========================================= */
 
-function animateValue(el, endValue, suffix = '') {
+function animateValue(
+    el,
+    endValue,
+    suffix = ''
+) {
 
     if (!el) return;
 
-    const start = parseFloat(el.dataset.raw || '0') || 0;
-    const end = parseFloat(endValue) || 0;
+    const start =
+        parseFloat(
+            el.dataset.raw || '0'
+        ) || 0;
+
+    const end =
+        parseFloat(endValue) || 0;
+
     const duration = 500;
-    const startTime = performance.now();
+
+    const startTime =
+        performance.now();
+
 
     function tick(now) {
 
-        const progress = Math.min((now - startTime) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = start + (end - start) * eased;
+        const progress =
+            Math.min(
+                (now - startTime) / duration,
+                1
+            );
+
+        const eased =
+            1 - Math.pow(
+                1 - progress,
+                3
+            );
+
+        const current =
+            start +
+            (end - start) *
+            eased;
+
 
         el.textContent =
-            (suffix === '%'
-                ? current.toFixed(1)
-                : Math.round(current)) + suffix;
+            (
+                suffix === '%'
+                    ? current.toFixed(1)
+                    : Math.round(current)
+            ) + suffix;
+
 
         if (progress < 1) {
+
             requestAnimationFrame(tick);
+
         } else {
+
             el.dataset.raw = end;
         }
     }
 
+
     requestAnimationFrame(tick);
 }
+
 
 /* =========================================
    SUMMARY
@@ -155,17 +237,43 @@ async function loadSummary() {
     const { ok, data } =
         await api('/slots/summary');
 
-    if (!ok) return;
+    if (!ok || !data) return;
 
-    animateValue(document.getElementById('statTotal'), data.total || 0);
-    animateValue(document.getElementById('statFree'), data.free || 0);
-    animateValue(document.getElementById('statOcc'), data.occupied || 0);
+
+    animateValue(
+        document.getElementById('statTotal'),
+        data.total || 0
+    );
+
+
+    animateValue(
+        document.getElementById('statFree'),
+        data.free || 0
+    );
+
+
+    animateValue(
+        document.getElementById('statOcc'),
+        data.occupied || 0
+    );
+
 
     const occupancy =
-        data.total ? ((data.occupied / data.total) * 100) : 0;
+        data.total
+            ? (
+                data.occupied /
+                data.total
+            ) * 100
+            : 0;
 
-    animateValue(document.getElementById('statPct'), occupancy, '%');
+
+    animateValue(
+        document.getElementById('statPct'),
+        occupancy,
+        '%'
+    );
 }
+
 
 /* =========================================
    LOAD DASHBOARD
@@ -179,8 +287,9 @@ async function loadDashboardData() {
 
     await loadFloorOccupancy();
 
-    loadVehicleDistribution();
+    await loadVehicleDistribution();
 }
+
 
 /* =========================================
    LOAD SLOTS
@@ -191,12 +300,13 @@ async function loadSlots() {
     const { ok, data } =
         await api('/slots');
 
-    if (!ok) return;
+    if (!ok || !data) return;
 
     allSlots = data;
 
     renderSlots();
 }
+
 
 /* =========================================
    RENDER SLOTS
@@ -211,14 +321,22 @@ function renderSlots() {
 
     grid.innerHTML = '';
 
+
     const floorFilter =
-        document.getElementById('floorFilter')?.value;
+        document.getElementById(
+            'floorFilter'
+        )?.value;
+
 
     const statusFilter =
-        document.getElementById('statusFilter')?.value;
+        document.getElementById(
+            'statusFilter'
+        )?.value;
+
 
     let filteredSlots =
         allSlots;
+
 
     if (
         floorFilter &&
@@ -232,6 +350,7 @@ function renderSlots() {
             );
     }
 
+
     if (
         statusFilter &&
         statusFilter !== 'all'
@@ -244,6 +363,7 @@ function renderSlots() {
             );
     }
 
+
     filteredSlots.forEach(slot => {
 
         grid.innerHTML += `
@@ -253,13 +373,16 @@ function renderSlots() {
                 data-slot-id="${slot.slot_id}"
             >
 
-                <h3>${slot.slot_id}</h3>
+                <h3>
+                    ${slot.slot_id}
+                </h3>
 
                 <p>
                     ${slot.status}
                 </p>
 
             </div>
+
         `;
     });
 }
@@ -269,7 +392,9 @@ function renderSlots() {
    REVENUE CHART
 ========================================= */
 
-async function loadRevenueChart(filter = "current") {
+async function loadRevenueChart(
+    filter = 'current'
+) {
 
     try {
 
@@ -278,58 +403,50 @@ async function loadRevenueChart(filter = "current") {
                 `/analytics/revenue?filter=${filter}`
             );
 
+
         if (!ok || !data) {
 
             console.error(
-                "Revenue API failed:",
+                'Revenue API failed:',
                 data
             );
 
             return;
         }
 
-        console.log(
-            "Revenue data:",
-            data
-        );
 
+        const labels =
+            data.labels || [];
 
-        const labels = data.labels || [];
-
-        const values = data.values || [];
+        const values =
+            data.values || [];
 
 
         const canvas =
             document.getElementById(
-                "revenueChart"
+                'revenueChart'
             );
 
-        if (!canvas) {
 
-            console.error(
-                "revenueChart canvas not found"
-            );
-
-            return;
-        }
+        if (!canvas) return;
 
 
         const ctx =
-            canvas.getContext("2d");
+            canvas.getContext('2d');
 
 
-        // Destroy old chart
-        if (window.revenueChartInstance) {
+        if (
+            window.revenueChartInstance
+        ) {
 
             window.revenueChartInstance.destroy();
-
         }
 
 
         window.revenueChartInstance =
             new Chart(ctx, {
 
-                type: "line",
+                type: 'line',
 
                 data: {
 
@@ -337,14 +454,14 @@ async function loadRevenueChart(filter = "current") {
 
                     datasets: [{
 
-                        label: "Revenue",
+                        label: 'Revenue',
 
                         data: values,
 
-                        borderColor: "#2A4F8F",
+                        borderColor: '#2A4F8F',
 
                         backgroundColor:
-                            "rgba(42,79,143,0.10)",
+                            'rgba(42,79,143,0.10)',
 
                         fill: true,
 
@@ -355,13 +472,12 @@ async function loadRevenueChart(filter = "current") {
                         pointRadius: 4,
 
                         pointBackgroundColor:
-                            "#2A4F8F",
+                            '#2A4F8F',
 
                         pointBorderColor:
-                            "#ffffff",
+                            '#ffffff',
 
                         pointBorderWidth: 1.5
-
                     }]
                 },
 
@@ -382,20 +498,18 @@ async function loadRevenueChart(filter = "current") {
 
                             callbacks: {
 
-                                label: function(context) {
+                                label:
+                                    function(context) {
 
-                                    return " ₹" +
-                                        Number(
-                                            context.raw
-                                        ).toLocaleString(
-                                            "en-IN"
-                                        );
-                                }
-
+                                        return ' ₹' +
+                                            Number(
+                                                context.raw
+                                            ).toLocaleString(
+                                                'en-IN'
+                                            );
+                                    }
                             }
-
                         }
-
                     },
 
 
@@ -407,18 +521,17 @@ async function loadRevenueChart(filter = "current") {
 
                             ticks: {
 
-                                callback: function(value) {
+                                callback:
+                                    function(value) {
 
-                                    return "₹" +
-                                        Number(value)
-                                            .toLocaleString(
-                                                "en-IN"
+                                        return '₹' +
+                                            Number(
+                                                value
+                                            ).toLocaleString(
+                                                'en-IN'
                                             );
-
-                                }
-
+                                    }
                             }
-
                         },
 
 
@@ -427,25 +540,21 @@ async function loadRevenueChart(filter = "current") {
                             grid: {
                                 display: false
                             }
-
                         }
-
                     }
-
                 }
-
             });
 
 
     } catch (error) {
 
         console.error(
-            "Revenue chart error:",
+            'Revenue chart error:',
             error
         );
-
     }
 }
+
 
 /* =========================================
    FLOOR OCCUPANCY
@@ -456,9 +565,11 @@ async function loadFloorOccupancy() {
     const { ok, data } =
         await api('/slots');
 
-    if (!ok) return;
+    if (!ok || !data) return;
+
 
     const floors = {};
+
 
     data.forEach(slot => {
 
@@ -472,123 +583,154 @@ async function loadFloorOccupancy() {
             };
         }
 
+
         floors[slot.floor].total++;
 
-        if (slot.status === 'occupied') {
+
+        if (
+            slot.status === 'occupied'
+        ) {
 
             floors[slot.floor].occupied++;
         }
     });
 
+
     const floorGrid =
-        document.getElementById('floorGrid');
+        document.getElementById(
+            'floorGrid'
+        );
+
 
     if (!floorGrid) return;
 
+
     floorGrid.innerHTML = '';
+
 
     let chartIndex = 0;
 
-    Object.keys(floors).forEach(floor => {
 
-        const stats = floors[floor];
+    Object.keys(floors).forEach(
+        floor => {
 
-        const occupied =
-            Math.round(
-                (stats.occupied / stats.total) * 100
-            );
+            const stats =
+                floors[floor];
 
-        const free =
-            100 - occupied;
 
-        const chartId =
-            `floorChart${chartIndex}`;
+            const occupied =
+                Math.round(
+                    (
+                        stats.occupied /
+                        stats.total
+                    ) * 100
+                );
 
-        floorGrid.innerHTML += `
 
-            <div class="floor-item">
+            const free =
+                100 - occupied;
 
-                <h4>${floor}</h4>
 
-                <div class="small-chart">
+            const chartId =
+                `floorChart${chartIndex}`;
 
-                    <canvas id="${chartId}"></canvas>
+
+            floorGrid.innerHTML += `
+
+                <div class="floor-item">
+
+                    <h4>
+                        ${floor}
+                    </h4>
+
+                    <div class="small-chart">
+
+                        <canvas
+                            id="${chartId}"
+                        ></canvas>
+
+                    </div>
+
+                    <p>
+                        ${occupied}% occupied
+                    </p>
 
                 </div>
 
-                <p>${occupied}% occupied</p>
+            `;
 
-            </div>
-        `;
 
-        chartIndex++;
+            chartIndex++;
 
-        requestAnimationFrame(() => {
 
-            const canvas =
-                document.getElementById(chartId);
+            requestAnimationFrame(() => {
 
-            if (!canvas) return;
+                const canvas =
+                    document.getElementById(
+                        chartId
+                    );
 
-            const ctx =
-                canvas.getContext('2d');
 
-            new Chart(ctx, {
+                if (!canvas) return;
 
-                type: 'doughnut',
 
-                data: {
+                const ctx =
+                    canvas.getContext(
+                        '2d'
+                    );
 
-                    labels: [
-                        'Occupied',
-                        'Free'
-                    ],
 
-                    datasets: [{
+                new Chart(ctx, {
 
-                        data: [
-                            occupied,
-                            free
+                    type: 'doughnut',
+
+                    data: {
+
+                        labels: [
+                            'Occupied',
+                            'Free'
                         ],
 
-                        backgroundColor: [
-                            '#C4443A',
-                            '#1E8E5A'
-                        ],
+                        datasets: [{
 
-                        borderWidth: 0
-                    }]
-                },
+                            data: [
+                                occupied,
+                                free
+                            ],
 
-                options: {
+                            backgroundColor: [
+                                '#C4443A',
+                                '#1E8E5A'
+                            ],
 
-                    responsive: true,
-
-                    maintainAspectRatio: false,
-
-                    animation: false,
-
-                    plugins: {
-
-                        legend: {
-                            display: false
-                        }
+                            borderWidth: 0
+                        }]
                     },
 
-                    cutout: '72%'
-                }
+
+                    options: {
+
+                        responsive: true,
+
+                        maintainAspectRatio: false,
+
+                        animation: false,
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            }
+                        },
+
+                        cutout: '72%'
+                    }
+                });
             });
-        });
-    });
+        }
+    );
 }
 
-/* =========================================
-   VEHICLE DISTRIBUTION
-========================================= */
-
-/* =========================================
-   VEHICLE DISTRIBUTION
-========================================= */
 
 /* =========================================
    VEHICLE DISTRIBUTION
@@ -599,12 +741,15 @@ async function loadVehicleDistribution() {
     try {
 
         const { ok, data } =
-            await api('/analytics/vehicle-distribution');
+            await api(
+                '/analytics/vehicle-distribution'
+            );
+
 
         if (!ok || !data) {
 
             console.error(
-                "Vehicle distribution API failed:",
+                'Vehicle distribution API failed:',
                 data
             );
 
@@ -612,43 +757,28 @@ async function loadVehicleDistribution() {
         }
 
 
-        /*
-         * Backend returns VEHICLE COUNTS:
-         *
-         * {
-         *   cars: 87,
-         *   bikes: 162,
-         *   trucks: 185
-         * }
-         *
-         * We calculate the percentages here.
-         */
-
-
         const cars =
             Number(data.cars) || 0;
 
+
         const bikes =
             Number(data.bikes) || 0;
+
 
         const trucks =
             Number(data.trucks) || 0;
 
 
-        /* ================================
-           TOTAL VEHICLES
-        ================================= */
-
         const total =
-            cars + bikes + trucks;
+            cars +
+            bikes +
+            trucks;
 
-
-        /* ================================
-           CALCULATE PERCENTAGES
-        ================================= */
 
         let carPercent = 0;
+
         let bikePercent = 0;
+
         let truckPercent = 0;
 
 
@@ -659,21 +789,18 @@ async function loadVehicleDistribution() {
                     (cars / total) * 100
                 );
 
+
             bikePercent =
                 Math.round(
                     (bikes / total) * 100
                 );
+
 
             truckPercent =
                 Math.round(
                     (trucks / total) * 100
                 );
 
-
-            /*
-             * Make sure rounded values
-             * always add up to exactly 100%.
-             */
 
             const roundedTotal =
                 carPercent +
@@ -689,56 +816,80 @@ async function loadVehicleDistribution() {
         }
 
 
-        /* ================================
-           UPDATE TEXT
-        ================================= */
-
-        document.getElementById(
-            "carPercent"
-        ).innerText =
-            `${carPercent}%`;
+        const carPercentEl =
+            document.getElementById(
+                'carPercent'
+            );
 
 
-        document.getElementById(
-            "bikePercent"
-        ).innerText =
-            `${bikePercent}%`;
+        const bikePercentEl =
+            document.getElementById(
+                'bikePercent'
+            );
 
 
-        document.getElementById(
-            "truckPercent"
-        ).innerText =
-            `${truckPercent}%`;
+        const truckPercentEl =
+            document.getElementById(
+                'truckPercent'
+            );
 
 
-        /* ================================
-           UPDATE PROGRESS BARS
-        ================================= */
-
-        document.getElementById(
-            "carBar"
-        ).style.width =
-            `${carPercent}%`;
+        const carBar =
+            document.getElementById(
+                'carBar'
+            );
 
 
-        document.getElementById(
-            "bikeBar"
-        ).style.width =
-            `${bikePercent}%`;
+        const bikeBar =
+            document.getElementById(
+                'bikeBar'
+            );
 
 
-        document.getElementById(
-            "truckBar"
-        ).style.width =
-            `${truckPercent}%`;
+        const truckBar =
+            document.getElementById(
+                'truckBar'
+            );
 
 
-        /* ================================
-           DEBUG
-        ================================= */
+        if (carPercentEl) {
+            carPercentEl.innerText =
+                `${carPercent}%`;
+        }
+
+
+        if (bikePercentEl) {
+            bikePercentEl.innerText =
+                `${bikePercent}%`;
+        }
+
+
+        if (truckPercentEl) {
+            truckPercentEl.innerText =
+                `${truckPercent}%`;
+        }
+
+
+        if (carBar) {
+            carBar.style.width =
+                `${carPercent}%`;
+        }
+
+
+        if (bikeBar) {
+            bikeBar.style.width =
+                `${bikePercent}%`;
+        }
+
+
+        if (truckBar) {
+            truckBar.style.width =
+                `${truckPercent}%`;
+        }
+
 
         console.log(
-            "Vehicle distribution:",
+            'Vehicle distribution:',
             {
                 cars,
                 bikes,
@@ -756,118 +907,132 @@ async function loadVehicleDistribution() {
     } catch (error) {
 
         console.error(
-            "Vehicle distribution error:",
+            'Vehicle distribution error:',
             error
         );
-
     }
 }
 
+
 /* =========================================
-   ENTRY
+   VEHICLE ENTRY
 ========================================= */
 
 async function registerEntry() {
 
     const vehicleNumber =
         document.getElementById(
-            "vehicleNum"
-        ).value
+            'vehicleNum'
+        )
+        .value
         .trim()
         .toUpperCase();
 
+
     const vehicleType =
         document.getElementById(
-            "vehicleType"
+            'vehicleType'
         ).value;
 
-    if (!vehicleNumber || !vehicleType) {
+
+    if (
+        !vehicleNumber ||
+        !vehicleType
+    ) {
 
         showAlert(
-            "Enter vehicle number and select vehicle type",
-            "error"
+            'Enter vehicle number and select vehicle type',
+            'error'
         );
 
         return;
     }
 
+
     try {
 
-        const response = await fetch(
+        const { ok, data } =
+            await api(
+                '/entry',
+                {
 
-            "http://127.0.0.1:8000/entry",
+                    method: 'POST',
 
-            {
-                method: "POST",
+                    body: JSON.stringify({
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                        vehicle_number:
+                            vehicleNumber,
 
-                body: JSON.stringify({
+                        vehicle_type:
+                            vehicleType
+                    })
+                }
+            );
 
-                    vehicle_number: vehicleNumber,
 
-                    vehicle_type: vehicleType
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (data.error || data.detail) {
+        if (!ok) {
 
             showAlert(
-                data.error || data.detail,
-                "error"
+                data?.error ||
+                data?.detail ||
+                'Entry failed',
+                'error'
             );
 
             return;
         }
 
+
         showAlert(
             `Vehicle registered — slot ${data.slot_allocated} assigned`
         );
 
-        // Clear fields
 
         document.getElementById(
-            "vehicleNum"
-        ).value = "";
+            'vehicleNum'
+        ).value = '';
+
 
         document.getElementById(
-            "vehicleType"
-        ).value = "";
+            'vehicleType'
+        ).value = '';
 
-        // Reload dashboard
 
-        loadDashboardData();
+        await loadDashboardData();
 
-        loadSlots();
+        await loadSlots();
 
-        loadLogs();
+        await loadLogs(1);
+
 
     } catch (error) {
 
-        console.log(error);
+        console.error(error);
 
-        showAlert("Entry failed", "error");
+        showAlert(
+            'Entry failed',
+            'error'
+        );
     }
 }
 
+
 /* =========================================
-   EXIT
+   VEHICLE EXIT
 ========================================= */
 
 async function processExit() {
 
-    const vehicle_number =
-        document.getElementById('exitVehicleNum')
-            .value
-            .trim()
-            .toUpperCase();
+    const vehicleNumber =
+        document.getElementById(
+            'exitVehicleNum'
+        )
+        .value
+        .trim()
+        .toUpperCase();
 
-    if (!vehicle_number) {
+
+    if (!vehicleNumber) {
 
         showAlert(
             'Enter vehicle number',
@@ -877,248 +1042,598 @@ async function processExit() {
         return;
     }
 
+
     const { ok, data } =
-        await api('/exit', {
+        await api(
+            '/exit',
+            {
 
-            method: 'POST',
+                method: 'POST',
 
-            body: JSON.stringify({
-                vehicle_number
-            })
-        });
+                body: JSON.stringify({
+
+                    vehicle_number:
+                        vehicleNumber
+                })
+            }
+        );
+
 
     if (!ok) {
 
         showAlert(
-            data?.detail || 'Error processing exit',
+            data?.detail ||
+            'Error processing exit',
             'error'
         );
 
         return;
     }
 
-    showAlert(data.message);
+
+    showAlert(
+        data.message
+    );
+
 
     document.getElementById(
-        "billingResult"
+        'billingResult'
     ).innerHTML = `
 
         <div class="receipt">
 
             <div class="receipt-head">
-                <h3>Billing receipt</h3>
-                <span>#${data.billing_id}</span>
+
+                <h3>
+                    Billing receipt
+                </h3>
+
+                <span>
+                    #${data.billing_id}
+                </span>
+
             </div>
 
-            <div class="receipt-row">
-                <span class="label">Vehicle number</span>
-                <span class="value">${data.vehicle_number}</span>
-            </div>
 
             <div class="receipt-row">
-                <span class="label">Slot</span>
-                <span class="value">${data.slot_id} · ${data.floor}</span>
+
+                <span class="label">
+                    Vehicle number
+                </span>
+
+                <span class="value">
+                    ${data.vehicle_number}
+                </span>
+
             </div>
 
-            <div class="receipt-row">
-                <span class="label">Entry time</span>
-                <span class="value">${formatTime(data.entry_time)}</span>
-            </div>
 
             <div class="receipt-row">
-                <span class="label">Exit time</span>
-                <span class="value">${formatTime(data.exit_time)}</span>
+
+                <span class="label">
+                    Slot
+                </span>
+
+                <span class="value">
+                    ${data.slot_id} · ${data.floor}
+                </span>
+
             </div>
 
-            <div class="receipt-row">
-                <span class="label">Duration</span>
-                <span class="value">${data.duration_minutes} min</span>
-            </div>
 
             <div class="receipt-row">
-                <span class="label">Rate</span>
-                <span class="value">₹${data.rate_per_hour}/hour</span>
+
+                <span class="label">
+                    Entry time
+                </span>
+
+                <span class="value">
+                    ${formatTime(data.entry_time)}
+                </span>
+
             </div>
+
+
+            <div class="receipt-row">
+
+                <span class="label">
+                    Exit time
+                </span>
+
+                <span class="value">
+                    ${formatTime(data.exit_time)}
+                </span>
+
+            </div>
+
+
+            <div class="receipt-row">
+
+                <span class="label">
+                    Duration
+                </span>
+
+                <span class="value">
+                    ${data.duration_minutes} min
+                </span>
+
+            </div>
+
+
+            <div class="receipt-row">
+
+                <span class="label">
+                    Rate
+                </span>
+
+                <span class="value">
+                    ₹${data.rate_per_hour}/hour
+                </span>
+
+            </div>
+
 
             <div class="receipt-total">
-                <span class="label">Total fee</span>
-                <span class="value">₹${data.fee}</span>
+
+                <span class="label">
+                    Total fee
+                </span>
+
+                <span class="value">
+                    ₹${data.fee}
+                </span>
+
             </div>
 
         </div>
     `;
 
-    loadDashboardData();
 
-    loadSlots();
+    await loadDashboardData();
+
+    await loadSlots();
+
+    await loadLogs(1);
 }
 
+
 /* =========================================
-   LOAD LOGS
+   LOAD PARKING LOGS
 ========================================= */
 
 async function loadLogs(page = 1) {
 
     const search =
-        document.getElementById('searchVehicle')?.value || '';
+        document.getElementById(
+            'searchVehicle'
+        )?.value
+        ?.trim() || '';
+
 
     const status =
-        document.getElementById('logStatusFilter')?.value || '';
+        document.getElementById(
+            'logStatusFilter'
+        )?.value || '';
+
+
+    /* -------------------------------------
+       Build query safely
+    ------------------------------------- */
+
+    const params =
+        new URLSearchParams({
+
+            page: String(page),
+
+            limit: String(PER_PAGE),
+
+            vehicle_number: search,
+
+            status: status
+        });
+
+
+    console.log(
+        'Loading parking logs:',
+        params.toString()
+    );
+
 
     const { ok, data } =
         await api(
-            `/logs?page=${page}&limit=50&vehicle_number=${search}&status=${status}`
+            `/logs?${params.toString()}`
         );
 
-    if (!ok) return;
+
+    if (!ok || !data) {
+
+        showAlert(
+            'Unable to load parking logs',
+            'error'
+        );
+
+        return;
+    }
+
 
     const tbody =
-        document.getElementById('logsBody');
+        document.getElementById(
+            'logsBody'
+        );
+
 
     if (!tbody) return;
 
+
     tbody.innerHTML = '';
 
-    data.logs.forEach(log => {
+
+    /*
+     * Backend returns:
+     *
+     * {
+     *   page: 1,
+     *   limit: 500,
+     *   count: 100,
+     *   total: 100,
+     *   pages: 1,
+     *   logs: [...]
+     * }
+     *
+     * Support both the new format
+     * and the old array format.
+     */
+
+    const logs =
+        Array.isArray(data)
+            ? data
+            : (data.logs || []);
+
+
+    /* -------------------------------------
+       No logs
+    ------------------------------------- */
+
+    if (!logs.length) {
+
+        tbody.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="9"
+                    style="
+                        text-align: center;
+                        padding: 30px;
+                        color: #6B7688;
+                    "
+                >
+                    No parking logs found
+                </td>
+
+            </tr>
+
+        `;
+
+        return;
+    }
+
+
+    /* -------------------------------------
+       Render every log
+    ------------------------------------- */
+
+    logs.forEach(log => {
+
+        const vehicleNumber =
+            log.vehicle_number || '-';
+
+
+        const vehicleType =
+            log.vehicle_type || '-';
+
+
+        const slot =
+            log.slot_id || '-';
+
+
+        const floor =
+            log.floor || '-';
+
+
+        const entryTime =
+            log.entry_time
+                ? formatTime(
+                    log.entry_time
+                )
+                : '-';
+
+
+        const exitTime =
+            log.exit_time
+                ? formatTime(
+                    log.exit_time
+                )
+                : '-';
+
+
+        let duration = '-';
+
+
+        if (
+            log.duration !== undefined &&
+            log.duration !== null
+        ) {
+
+            duration =
+                log.duration;
+
+        } else if (
+            log.duration_minutes !== undefined &&
+            log.duration_minutes !== null
+        ) {
+
+            duration =
+                `${log.duration_minutes} mins`;
+        }
+
+
+        const fee =
+            Number(
+                log.fee || 0
+            ).toLocaleString(
+                'en-IN'
+            );
+
+
+        const status =
+            log.status || 'occupied';
+
 
         tbody.innerHTML += `
 
             <tr>
 
                 <td>
-                    ${log.vehicle_number || '-'}
+                    ${vehicleNumber}
                 </td>
 
+
                 <td>
-                    ${log.slot_id || '-'}
+                    ${vehicleType}
                 </td>
 
+
                 <td>
-                    ${
-                        log.entry_time
-                        ? formatTime(log.entry_time)
-                        : '-'
-                    }
+                    ${slot}
                 </td>
 
+
                 <td>
-                    ${
-                        log.exit_time
-                        ? formatTime(log.exit_time)
-                        : '-'
-                    }
+                    ${floor}
                 </td>
 
+
                 <td>
-                    ${log.duration || '-'}
+                    ${entryTime}
                 </td>
 
+
                 <td>
-                    ₹${log.fee || 0}
+                    ${exitTime}
                 </td>
 
+
+                <td>
+                    ${duration}
+                </td>
+
+
+                <td>
+                    ₹${fee}
+                </td>
+
+
                 <td>
 
-                    <span class="
-                        status
-                        ${log.status}
-                    ">
-                        ${log.status || 'occupied'}
+                    <span
+                        class="status ${status}"
+                    >
+                        ${status}
                     </span>
 
                 </td>
 
             </tr>
+
         `;
     });
+
+
+    console.log(
+        `Loaded ${logs.length} parking logs`
+    );
 }
+
 
 /* =========================================
    FORMAT TIME
 ========================================= */
 
+/* =========================================
+   FORMAT TIME - INDIA STANDARD TIME
+========================================= */
+
 function formatTime(time) {
 
-    if (!time) return '-';
+    if (!time) {
+        return '-';
+    }
 
-    return new Date(time)
-        .toLocaleString('en-IN');
+    let timeString = String(time).trim();
+
+    /*
+     * Backend currently stores UTC timestamps
+     * without an explicit timezone.
+     *
+     * Example:
+     * 2026-09-04T14:58:07
+     *
+     * Treat these timestamps as UTC.
+     */
+
+    if (
+        !timeString.endsWith('Z') &&
+        !/[+-]\d{2}:\d{2}$/.test(timeString)
+    ) {
+        timeString += 'Z';
+    }
+
+    const date = new Date(timeString);
+
+    if (Number.isNaN(date.getTime())) {
+        return String(time);
+    }
+
+    return date.toLocaleString(
+        'en-IN',
+        {
+            timeZone: 'Asia/Kolkata',
+
+            day: 'numeric',
+            month: 'numeric',
+            year: 'numeric',
+
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+
+            hour12: true
+        }
+    );
 }
 
 /* =========================================
    WEBSOCKET
 ========================================= */
 
-const connStatusEl = document.getElementById('connStatus');
-const connStatusLabel = document.getElementById('connStatusLabel');
+const connStatusEl =
+    document.getElementById(
+        'connStatus'
+    );
+
+
+const connStatusLabel =
+    document.getElementById(
+        'connStatusLabel'
+    );
+
 
 function setConnStatus(live) {
 
     if (!connStatusEl) return;
 
-    connStatusEl.classList.toggle('live', live);
+
+    connStatusEl.classList.toggle(
+        'live',
+        live
+    );
+
 
     if (connStatusLabel) {
-        connStatusLabel.textContent = live ? 'Live' : 'Reconnecting…';
+
+        connStatusLabel.textContent =
+            live
+                ? 'Live'
+                : 'Reconnecting…';
     }
 }
+
 
 const socket =
     new WebSocket(
         'ws://127.0.0.1:8000/ws'
     );
 
+
 socket.onopen = () => {
 
     setConnStatus(true);
 };
+
 
 socket.onclose = () => {
 
     setConnStatus(false);
 };
 
+
 socket.onerror = () => {
 
     setConnStatus(false);
 };
 
-socket.onmessage = async (event) => {
 
-    const data =
-        JSON.parse(event.data);
+socket.onmessage =
+    async (event) => {
 
-    const slotCard =
-        document.querySelector(
+        try {
 
-            `[data-slot-id="${data.slot_id}"]`
-        );
+            const data =
+                JSON.parse(
+                    event.data
+                );
 
-    if (slotCard) {
 
-        slotCard.classList.remove(
-            'free',
-            'occupied'
-        );
+            const slotCard =
+                document.querySelector(
+                    `[data-slot-id="${data.slot_id}"]`
+                );
 
-        slotCard.classList.add(
-            data.status
-        );
 
-        slotCard.innerHTML = `
+            if (slotCard) {
 
-            <h3>${data.slot_id}</h3>
+                slotCard.classList.remove(
+                    'free',
+                    'occupied'
+                );
 
-            <p>${data.status}</p>
-        `;
-    }
 
-    await loadSummary();
+                slotCard.classList.add(
+                    data.status
+                );
 
-    await loadFloorOccupancy();
 
-    loadVehicleDistribution();
-};
+                slotCard.innerHTML = `
+
+                    <h3>
+                        ${data.slot_id}
+                    </h3>
+
+                    <p>
+                        ${data.status}
+                    </p>
+
+                `;
+            }
+
+
+            await loadSummary();
+
+            await loadFloorOccupancy();
+
+            await loadVehicleDistribution();
+
+
+        } catch (error) {
+
+            console.error(
+                'WebSocket message error:',
+                error
+            );
+        }
+    };
+
 
 /* =========================================
    CURRENT DATE
@@ -1129,55 +1644,120 @@ const dateBox =
         'currentDate'
     );
 
+
 if (dateBox) {
 
     dateBox.textContent =
-        new Date().toLocaleDateString(
-            'en-IN',
-            {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            }
-        );
+    new Date().toLocaleDateString(
+        'en-IN',
+        {
+            timeZone: 'Asia/Kolkata',
+
+            weekday: 'long',
+
+            day: 'numeric',
+
+            month: 'long',
+
+            year: 'numeric'
+        }
+    );
 }
 
+
 /* =========================================
-   FILTER LISTENERS
+   SLOT FILTER LISTENERS
 ========================================= */
 
 document
-    .getElementById('floorFilter')
+    .getElementById(
+        'floorFilter'
+    )
     ?.addEventListener(
         'change',
         renderSlots
     );
 
+
 document
-    .getElementById('statusFilter')
+    .getElementById(
+        'statusFilter'
+    )
     ?.addEventListener(
         'change',
         renderSlots
     );
 
-document
-    .getElementById("weekFilter")
-    ?.addEventListener("change", async function () {
 
-        await loadRevenueChart(this.value);
-    });
+/* =========================================
+   REVENUE FILTER
+========================================= */
+
+document
+    .getElementById(
+        'weekFilter'
+    )
+    ?.addEventListener(
+        'change',
+        async function() {
+
+            await loadRevenueChart(
+                this.value
+            );
+        }
+    );
+
+
+/* =========================================
+   PARKING LOG FILTER
+========================================= */
+
+document
+    .getElementById(
+        'logStatusFilter'
+    )
+    ?.addEventListener(
+        'change',
+        () => {
+
+            loadLogs(1);
+        }
+    );
+
+
+/*
+ * Press Enter inside the vehicle
+ * search box to apply the filter.
+ */
+
+document
+    .getElementById(
+        'searchVehicle'
+    )
+    ?.addEventListener(
+        'keydown',
+        event => {
+
+            if (
+                event.key === 'Enter'
+            ) {
+
+                loadLogs(1);
+            }
+        }
+    );
+
 
 /* =========================================
    WINDOW LOAD
 ========================================= */
 
-window.onload = async () => {
+window.onload =
+    async () => {
 
-    await loadDashboardData();
+        await loadDashboardData();
 
-    await loadSlots();
+        await loadSlots();
 
-    await loadLogs();
-
-};
+        await loadLogs(1);
+    };

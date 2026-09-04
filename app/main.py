@@ -1,8 +1,8 @@
-from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi import FastAPI, Depends, HTTPException, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pymongo import MongoClient
+from app.routers.auth import get_current_user
 from pydantic import BaseModel
 
 from datetime import datetime
@@ -53,7 +53,7 @@ app.add_middleware(
 
     allow_origins=["*"],
 
-    allow_credentials=True,
+    allow_credentials=False,
 
     allow_methods=["*"],
 
@@ -166,62 +166,52 @@ async def websocket_endpoint(
 # =========================================================
 
 app.include_router(
-    parking.router
+    parking.router,
+    dependencies=[Depends(get_current_user)]
 )
 
 app.include_router(
-    vehicle.router
+    vehicle.router,
+    dependencies=[Depends(get_current_user)]
 )
 
 app.include_router(
     slots.router,
     prefix="/slots",
-    tags=["Slots"]
+    tags=["Slots"],
+    dependencies=[Depends(get_current_user)]
 )
 
 app.include_router(
-    billing.router
+    billing.router,
+    dependencies=[Depends(get_current_user)]
 )
 
 app.include_router(
-    transaction.router
+    transaction.router,
+    dependencies=[Depends(get_current_user)]
 )
 
 app.include_router(
-    analytics.router
+    analytics.router,
+    dependencies=[Depends(get_current_user)]
 )
 
-# JWT Authentication
-app.include_router(
-    auth.router
-)
+# Authentication stays PUBLIC
+app.include_router(auth.router)
 
 
 # =========================================================
 # MONGODB CONNECTION
 # =========================================================
 
-MONGODB_URL = os.getenv(
-    "MONGODB_URL",
-    "mongodb://localhost:27017/"
+from app.mongodb import (
+    slot_collection,
+    vehicle_collection,
+    log_collection,
+    billing_collection,
+    transaction_collection
 )
-
-client = MongoClient(
-    MONGODB_URL
-)
-
-db = client["smart_parking"]
-
-slots_col = db["slots"]
-
-vehicles_col = db["vehicles"]
-
-logs_col = db["parking_logs"]
-
-billing_col = db["billing"]
-
-transaction_col = db["transactions"]
-
 
 print(
     "MongoDB Connected Successfully"
@@ -253,7 +243,7 @@ def initialize_slots():
 
     try:
 
-        existing = slots_col.count_documents({})
+        existing = slot_collection.count_documents({})
 
         if existing == 0:
 
@@ -284,7 +274,7 @@ def initialize_slots():
                             None
                     })
 
-            slots_col.insert_many(
+            slot_collection.insert_many(
                 slots_data
             )
 
@@ -385,7 +375,8 @@ vehicle_floor_map = {
 
 @app.post("/entry")
 def vehicle_entry(
-    data: VehicleEntry
+    data: VehicleEntry,
+    current_user=Depends(get_current_user)
 ):
 
     try:
@@ -444,7 +435,7 @@ def vehicle_entry(
         # CHECK EXISTING VEHICLE
         # ---------------------------------------------
 
-        existing = logs_col.find_one({
+        existing = log_collection.find_one({
 
             "vehicle_number":
                 vehicle_number,
@@ -466,7 +457,7 @@ def vehicle_entry(
         # FIND FREE SLOT
         # ---------------------------------------------
 
-        slot = slots_col.find_one({
+        slot = slot_collection.find_one({
 
             "floor": {
                 "$in":
@@ -491,7 +482,7 @@ def vehicle_entry(
         # UPDATE SLOT
         # ---------------------------------------------
 
-        slots_col.update_one(
+        slot_collection.update_one(
 
             {
                 "slot_id":
@@ -549,7 +540,7 @@ def vehicle_entry(
         }
 
 
-        logs_col.insert_one(
+        log_collection.insert_one(
             log_data
         )
 
@@ -587,7 +578,8 @@ def vehicle_entry(
 
 @app.post("/exit")
 def vehicle_exit(
-    body: VehicleIn
+    body: VehicleIn,
+    current_user=Depends(get_current_user)
 ):
 
     try:
@@ -603,7 +595,7 @@ def vehicle_exit(
         # FIND PARKING LOG
         # ---------------------------------------------
 
-        log = logs_col.find_one({
+        log = log_collection.find_one({
 
             "vehicle_number":
                 vehicle_number,
@@ -666,7 +658,7 @@ def vehicle_exit(
         # UPDATE LOG
         # ---------------------------------------------
 
-        logs_col.update_one(
+        log_collection.update_one(
 
             {
                 "_id":
@@ -693,7 +685,7 @@ def vehicle_exit(
         # FREE SLOT
         # ---------------------------------------------
 
-        slots_col.update_one(
+        slot_collection.update_one(
 
             {
                 "slot_id":
@@ -765,7 +757,7 @@ def vehicle_exit(
         }
 
 
-        billing_col.insert_one(
+        billing_collection.insert_one(
             billing_data
         )
 
@@ -799,7 +791,7 @@ def vehicle_exit(
         }
 
 
-        transaction_col.insert_one(
+        transaction_collection.insert_one(
             transaction_data
         )
 
@@ -873,14 +865,11 @@ def vehicle_exit(
 
 @app.get("/logs")
 def get_logs(
-
     page: int = 1,
-
     limit: int = 50,
-
     vehicle_number: str = None,
-
-    status: str = None
+    status: str = None,
+    current_user=Depends(get_current_user)
 ):
 
     try:
@@ -938,7 +927,7 @@ def get_logs(
 
         docs = list(
 
-            logs_col.find(
+            log_collection.find(
                 query,
                 {
                     "_id": 0
@@ -972,6 +961,12 @@ def get_logs(
                         "vehicle_number"
                     ),
 
+                "vehicle_type":
+                    d.get(
+                        "vehicle_type",
+                        "-"
+                    ),
+
                 "slot_id":
                     d.get(
                         "slot_id"
@@ -983,59 +978,31 @@ def get_logs(
                     ),
 
                 "status":
-
                     "exited"
-
-                    if d.get(
-                        "exit_time"
-                    )
-
-                    else
-                    "occupied",
+                    if d.get("exit_time")
+                    else "occupied",
 
                 "entry_time":
-
-                    d[
-                        "entry_time"
-                    ].isoformat()
-
-                    if d.get(
-                        "entry_time"
-                    )
-
+                    d["entry_time"].isoformat()
+                    if d.get("entry_time")
                     else None,
 
                 "exit_time":
-
-                    d[
-                        "exit_time"
-                    ].isoformat()
-
-                    if d.get(
-                        "exit_time"
-                    )
-
+                    d["exit_time"].isoformat()
+                    if d.get("exit_time")
                     else None,
 
                 "fee":
-                    d.get(
-                        "fee",
-                        0
-                    ),
+                    d.get("fee", 0),
 
                 "duration":
-
                     f"{round(d.get('duration_minutes', 0))} mins"
-
-                    if d.get(
-                        "duration_minutes"
-                    )
-
+                    if d.get("duration_minutes")
                     else "-"
             })
 
 
-        total = logs_col.count_documents(
+        total = log_collection.count_documents(
             query
         )
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
     <meta charset="UTF-8">
@@ -11,684 +12,2212 @@
 
     <title>Create Account | Smart Parking Analytics</title>
 
-    <link rel="stylesheet" href="/static/auth.css">
+
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+
+    <style>
+
+        /* =====================================================
+           RESET
+        ===================================================== */
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        /* =====================================================
+           PAGE
+        ===================================================== */
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+        }
+
+
+        body {
+
+            font-family:
+                "Segoe UI",
+                Arial,
+                sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #eef4ff 0%,
+                    #f8fafc 50%,
+                    #eefaf8 100%
+                );
+
+            color: #172033;
+
+            min-height: 100svh;
+
+            padding: 22px;
+
+            overflow-y: auto;
+        }
+
+
+        /* =====================================================
+           MAIN CONTAINER
+        ===================================================== */
+
+        .signup-container {
+
+            width: 100%;
+
+            max-width: 900px;
+
+            min-height: 650px;
+
+            margin: 0 auto;
+
+            display: grid;
+
+            grid-template-columns: 43% 57%;
+
+            background: #ffffff;
+
+            border-radius: 24px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 25px 65px
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.13
+                );
+        }
+
+
+        /* =====================================================
+           LEFT BRAND PANEL
+        ===================================================== */
+
+        .brand-panel {
+
+            position: relative;
+
+            min-width: 0;
+
+            padding: 42px 38px;
+
+            color: #ffffff;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #0f172a 0%,
+                    #172554 55%,
+                    #1d4ed8 100%
+                );
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+            overflow: hidden;
+        }
+
+
+        /* =====================================================
+           DECORATIVE CIRCLES
+        ===================================================== */
+
+        .brand-panel::before {
+
+            content: "";
+
+            position: absolute;
+
+            width: 310px;
+
+            height: 310px;
+
+            border-radius: 50%;
+
+            background:
+                rgba(
+                    96,
+                    165,
+                    250,
+                    0.13
+                );
+
+            top: -130px;
+
+            right: -120px;
+        }
+
+
+        .brand-panel::after {
+
+            content: "";
+
+            position: absolute;
+
+            width: 260px;
+
+            height: 260px;
+
+            border-radius: 50%;
+
+            background:
+                rgba(
+                    59,
+                    130,
+                    246,
+                    0.12
+                );
+
+            bottom: -120px;
+
+            left: -100px;
+        }
+
+
+        /* =====================================================
+           BRAND CONTENT
+        ===================================================== */
+
+        .brand-content {
+
+            position: relative;
+
+            z-index: 2;
+        }
+
+
+        /* =====================================================
+           BRAND ICON
+        ===================================================== */
+
+        .brand-logo {
+
+            width: 54px;
+
+            height: 54px;
+
+            border-radius: 15px;
+
+            background:
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.12
+                );
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.18
+                );
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #60a5fa;
+
+            font-size: 25px;
+
+            margin-bottom: 24px;
+        }
+
+
+        /* =====================================================
+           BRAND HEADING
+        ===================================================== */
+
+        .brand-panel h1 {
+
+            font-size: 35px;
+
+            line-height: 1.12;
+
+            letter-spacing: -0.8px;
+
+            margin-bottom: 17px;
+
+            color: #ffffff;
+        }
+
+
+        .brand-panel h1 span {
+
+            color: #60a5fa;
+        }
+
+
+        .brand-description {
+
+            color:
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.78
+                );
+
+            font-size: 14px;
+
+            line-height: 1.65;
+
+            max-width: 320px;
+        }
+
+
+        /* =====================================================
+           FEATURES
+        ===================================================== */
+
+        .brand-features {
+
+            list-style: none;
+
+            margin-top: 30px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 13px;
+        }
+
+
+        .brand-features li {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            color:
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.88
+                );
+
+            font-size: 13px;
+        }
+
+
+        .feature-icon {
+
+            width: 28px;
+
+            height: 28px;
+
+            flex: 0 0 28px;
+
+            border-radius: 8px;
+
+            background:
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.10
+                );
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #ffffff;
+
+            font-size: 11px;
+        }
+
+
+        /* =====================================================
+           BRAND FOOTER
+        ===================================================== */
+
+        .brand-footer {
+
+            position: relative;
+
+            z-index: 2;
+
+            color: #94a3b8;
+
+            font-size: 10px;
+        }
+
+
+        /* =====================================================
+           RIGHT FORM SECTION
+        ===================================================== */
+
+        .form-section {
+
+            min-width: 0;
+
+            padding: 34px 42px;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+        }
+
+
+        .form-wrapper {
+
+            width: 100%;
+
+            max-width: 420px;
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .form-header {
+
+            margin-bottom: 21px;
+        }
+
+
+        .form-header h2 {
+
+            color: #111827;
+
+            font-size: 29px;
+
+            line-height: 1.2;
+
+            margin-bottom: 6px;
+        }
+
+
+        .form-header p {
+
+            color: #64748b;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+        }
+
+
+        /* =====================================================
+           MESSAGE
+        ===================================================== */
+
+        .auth-message {
+
+            display: none;
+
+            padding: 9px 12px;
+
+            margin-bottom: 13px;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            line-height: 1.4;
+        }
+
+
+        .auth-message.show {
+
+            display: block;
+        }
+
+
+        .auth-message.error {
+
+            color: #b91c1c;
+
+            background: #fef2f2;
+
+            border:
+                1px solid #fecaca;
+        }
+
+
+        .auth-message.success {
+
+            color: #166534;
+
+            background: #f0fdf4;
+
+            border:
+                1px solid #bbf7d0;
+        }
+
+
+        /* =====================================================
+           FORM GROUP
+        ===================================================== */
+
+        .form-group {
+
+            margin-bottom: 13px;
+        }
+
+
+        .form-row {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 14px;
+        }
+
+
+        .form-label {
+
+            display: block;
+
+            margin-bottom: 6px;
+
+            color: #334155;
+
+            font-size: 12px;
+
+            font-weight: 600;
+        }
+
+
+        .required {
+
+            color: #dc2626;
+
+            margin-left: 2px;
+        }
+
+
+        /* =====================================================
+           INPUT
+        ===================================================== */
+
+        .input-wrapper {
+
+            position: relative;
+        }
+
+
+        .input-icon {
+
+            position: absolute;
+
+            left: 14px;
+
+            top: 50%;
+
+            transform:
+                translateY(-50%);
+
+            color: #94a3b8;
+
+            font-size: 14px;
+
+            pointer-events: none;
+
+            z-index: 2;
+        }
+
+
+        .form-input {
+
+            width: 100%;
+
+            height: 44px;
+
+            padding:
+                0 13px 0 40px;
+
+            border:
+                1px solid #d5dce7;
+
+            border-radius: 9px;
+
+            outline: none;
+
+            color: #111827;
+
+            background: #ffffff;
+
+            font-family: inherit;
+
+            font-size: 13px;
+
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                background 0.2s ease;
+        }
+
+
+        .form-input:focus {
+
+            border-color: #2563eb;
+
+            background: #ffffff;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    0.10
+                );
+        }
+
+
+        .form-input::placeholder {
+
+            color: #9aa7b8;
+        }
+
+
+        /* =====================================================
+           PASSWORD INPUT
+        ===================================================== */
+
+        .password-input {
+
+            padding-right: 58px;
+        }
+
+
+        .password-toggle {
+
+            position: absolute;
+
+            right: 9px;
+
+            top: 50%;
+
+            transform:
+                translateY(-50%);
+
+            border: none;
+
+            background: transparent;
+
+            color: #64748b;
+
+            font-size: 11px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            padding: 5px;
+        }
+
+
+        .password-toggle:hover {
+
+            color: #2563eb;
+        }
+
+
+        /* =====================================================
+           PASSWORD REQUIREMENTS
+        ===================================================== */
+
+        .password-requirements {
+
+            margin-top: 7px;
+
+            padding: 9px 11px;
+
+            border:
+                1px solid #edf1f6;
+
+            border-radius: 8px;
+
+            background: #f8fafc;
+        }
+
+
+        .password-requirements p {
+
+            color: #64748b;
+
+            font-size: 10px;
+
+            font-weight: 600;
+
+            margin-bottom: 6px;
+        }
+
+
+        .password-requirements ul {
+
+            list-style: none;
+
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 4px 10px;
+        }
+
+
+        .password-requirements li {
+
+            color: #94a3b8;
+
+            font-size: 9px;
+
+            line-height: 1.35;
+        }
+
+
+        .password-requirements li::before {
+
+            content: "○";
+
+            margin-right: 5px;
+
+            font-size: 9px;
+        }
+
+
+        .password-requirements li.valid {
+
+            color: #16a34a;
+        }
+
+
+        .password-requirements li.valid::before {
+
+            content: "✓";
+        }
+
+
+        /* =====================================================
+           PASSWORD STRENGTH
+        ===================================================== */
+
+        .password-strength {
+
+            margin-top: 6px;
+        }
+
+
+        .strength-bar {
+
+            width: 100%;
+
+            height: 4px;
+
+            border-radius: 5px;
+
+            background: #e5e7eb;
+
+            overflow: hidden;
+        }
+
+
+        .strength-fill {
+
+            width: 0%;
+
+            height: 100%;
+
+            background: #2563eb;
+
+            transition:
+                width 0.25s ease;
+        }
+
+
+        .strength-text {
+
+            display: block;
+
+            margin-top: 4px;
+
+            color: #94a3b8;
+
+            font-size: 9px;
+        }
+
+
+        /* =====================================================
+           SUBMIT BUTTON
+        ===================================================== */
+
+        .auth-button {
+
+            width: 100%;
+
+            height: 46px;
+
+            margin-top: 3px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #1d4ed8
+                );
+
+            color: #ffffff;
+
+            font-family: inherit;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 8px;
+
+            box-shadow:
+                0 8px 18px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    0.22
+                );
+
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+
+        .auth-button:hover {
+
+            transform:
+                translateY(-1px);
+
+            box-shadow:
+                0 11px 22px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    0.28
+                );
+        }
+
+
+        .auth-button:active {
+
+            transform:
+                translateY(0);
+        }
+
+
+        .auth-button:disabled {
+
+            opacity: 0.65;
+
+            cursor: not-allowed;
+
+            transform: none;
+        }
+
+
+        /* =====================================================
+           FOOTER
+        ===================================================== */
+
+        .auth-footer {
+
+            margin-top: 14px;
+
+            text-align: center;
+
+            color: #64748b;
+
+            font-size: 11px;
+        }
+
+
+        .auth-link {
+
+            color: #2563eb;
+
+            text-decoration: none;
+
+            font-weight: 700;
+
+            margin-left: 3px;
+        }
+
+
+        .auth-link:hover {
+
+            text-decoration: underline;
+        }
+
+
+        /* =====================================================
+           SHORT DESKTOP SCREEN
+        ===================================================== */
+
+        @media (
+            max-height: 760px
+        ) and (
+            min-width: 851px
+        ) {
+
+            body {
+
+                padding: 12px;
+            }
+
+
+            .signup-container {
+
+                min-height: 0;
+
+                max-width: 900px;
+            }
+
+
+            .brand-panel {
+
+                padding:
+                    30px 34px;
+            }
+
+
+            .brand-logo {
+
+                width: 48px;
+
+                height: 48px;
+
+                margin-bottom: 18px;
+
+                font-size: 21px;
+            }
+
+
+            .brand-panel h1 {
+
+                font-size: 30px;
+
+                margin-bottom: 12px;
+            }
+
+
+            .brand-description {
+
+                font-size: 12px;
+
+                line-height: 1.5;
+            }
+
+
+            .brand-features {
+
+                margin-top: 20px;
+
+                gap: 9px;
+            }
+
+
+            .brand-features li {
+
+                font-size: 11px;
+            }
+
+
+            .feature-icon {
+
+                width: 25px;
+
+                height: 25px;
+
+                flex-basis: 25px;
+            }
+
+
+            .form-section {
+
+                padding:
+                    25px 38px;
+            }
+
+
+            .form-header {
+
+                margin-bottom: 17px;
+            }
+
+
+            .form-header h2 {
+
+                font-size: 26px;
+            }
+
+
+            .form-group {
+
+                margin-bottom: 10px;
+            }
+
+
+            .form-input {
+
+                height: 42px;
+            }
+
+
+            .password-requirements {
+
+                margin-top: 5px;
+
+                padding: 7px 10px;
+            }
+
+
+            .password-strength {
+
+                margin-top: 4px;
+            }
+
+
+            .auth-button {
+
+                height: 44px;
+            }
+
+
+            .auth-footer {
+
+                margin-top: 11px;
+            }
+        }
+
+
+        /* =====================================================
+           TABLET
+        ===================================================== */
+
+        @media (max-width: 850px) {
+
+            body {
+
+                padding: 15px;
+
+                overflow-y: auto;
+            }
+
+
+            .signup-container {
+
+                max-width: 560px;
+
+                min-height: 0;
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .brand-panel {
+
+                display: none;
+            }
+
+
+            .form-section {
+
+                padding:
+                    42px 38px;
+            }
+
+
+            .form-wrapper {
+
+                max-width: 430px;
+            }
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 500px) {
+
+            body {
+
+                padding: 10px;
+            }
+
+
+            .signup-container {
+
+                border-radius: 17px;
+            }
+
+
+            .form-section {
+
+                padding:
+                    30px 20px;
+            }
+
+
+            .form-header h2 {
+
+                font-size: 25px;
+            }
+
+
+            .form-row {
+
+                grid-template-columns: 1fr;
+
+                gap: 0;
+            }
+
+
+            .password-requirements ul {
+
+                grid-template-columns: 1fr;
+            }
+
+
+            .auth-footer {
+
+                font-size: 11px;
+            }
+        }
+
+    </style>
 
 </head>
 
+
 <body>
 
-<div class="auth-page">
 
-    <div class="auth-container">
+    <!-- =====================================================
+         MAIN CONTAINER
+    ====================================================== -->
 
-        <!-- BRAND PANEL -->
+    <main class="signup-container">
 
-        <section class="auth-brand">
+
+        <!-- =================================================
+             LEFT BRAND PANEL
+        ================================================== -->
+
+        <section class="brand-panel">
+
 
             <div class="brand-content">
 
+
+                <!-- BRAND ICON -->
+
                 <div class="brand-logo">
-                    🚗
+
+                    <i
+                        class="fa-solid fa-square-parking"
+                        aria-hidden="true"
+                    ></i>
+
                 </div>
 
-                <h1>Join Smart<br>Parking Analytics</h1>
 
-                <p>
-                    Create your account to monitor parking,
-                    manage vehicles and view intelligent
-                    parking analytics.
+                <!-- HEADING -->
+
+                <h1>
+
+                    Join Smart<br>
+
+                    <span>
+                        Parking Analytics
+                    </span>
+
+                </h1>
+
+
+                <!-- DESCRIPTION -->
+
+                <p class="brand-description">
+
+                    Create your account to monitor
+                    parking, manage vehicles and
+                    view intelligent parking analytics.
+
                 </p>
+
+
+                <!-- FEATURES -->
 
                 <ul class="brand-features">
 
+
                     <li>
-                        <span class="feature-icon">✓</span>
+
+                        <span class="feature-icon">
+
+                            <i
+                                class="fa-solid fa-square-parking"
+                                aria-hidden="true"
+                            ></i>
+
+                        </span>
+
                         Live parking availability
+
                     </li>
 
+
                     <li>
-                        <span class="feature-icon">✓</span>
+
+                        <span class="feature-icon">
+
+                            <i
+                                class="fa-solid fa-car"
+                                aria-hidden="true"
+                            ></i>
+
+                        </span>
+
                         Vehicle entry & exit tracking
+
                     </li>
 
+
                     <li>
-                        <span class="feature-icon">✓</span>
+
+                        <span class="feature-icon">
+
+                            <i
+                                class="fa-solid fa-indian-rupee-sign"
+                                aria-hidden="true"
+                            ></i>
+
+                        </span>
+
                         Automated ₹20/hour billing
+
                     </li>
 
+
                     <li>
-                        <span class="feature-icon">✓</span>
+
+                        <span class="feature-icon">
+
+                            <i
+                                class="fa-solid fa-shield-halved"
+                                aria-hidden="true"
+                            ></i>
+
+                        </span>
+
                         Secure account authentication
+
                     </li>
+
 
                 </ul>
 
             </div>
 
-        </section>
 
+            <!-- FOOTER -->
 
-        <!-- SIGNUP FORM -->
+            <div class="brand-footer">
 
-        <section class="auth-form-section">
-
-            <div class="auth-header">
-
-                <h2>Create account</h2>
-
-                <p>
-                    Fill in the details below to get started.
-                </p>
+                Real-time Parking Analytics Platform
 
             </div>
 
 
-            <div id="message" class="auth-message"></div>
+        </section>
 
 
-            <form id="signupForm" class="auth-form">
+        <!-- =================================================
+             RIGHT FORM SECTION
+        ================================================== -->
 
-                <!-- FULL NAME -->
+        <section class="form-section">
 
-                <div class="form-group">
 
-                    <label class="form-label">
+            <div class="form-wrapper">
 
-                        Full Name
 
-                        <span class="required">*</span>
+                <!-- HEADER -->
 
-                    </label>
+                <div class="form-header">
 
-                    <input
-                        type="text"
-                        id="fullName"
-                        class="form-input"
-                        placeholder="Enter your full name"
-                        required
-                        minlength="2"
-                        maxlength="100"
-                        autocomplete="name"
-                    >
+                    <h2>
+                        Create account
+                    </h2>
+
+
+                    <p>
+                        Fill in the details below to get started.
+                    </p>
 
                 </div>
 
 
-                <!-- USERNAME + EMAIL -->
+                <!-- MESSAGE -->
 
-                <div class="form-row">
+                <div
+                    id="message"
+                    class="auth-message"
+                    role="alert"
+                    aria-live="polite"
+                ></div>
 
-                    <div class="form-group">
 
-                        <label class="form-label">
+                <!-- =================================================
+                     SIGNUP FORM
+                ================================================== -->
 
-                            Username
+                <form
+                    id="signupForm"
+                    novalidate
+                >
 
-                            <span class="required">*</span>
 
-                        </label>
-
-                        <input
-                            type="text"
-                            id="username"
-                            class="form-input"
-                            placeholder="Choose username"
-                            required
-                            minlength="3"
-                            maxlength="50"
-                            autocomplete="username"
-                        >
-
-                    </div>
-
+                    <!-- FULL NAME -->
 
                     <div class="form-group">
 
-                        <label class="form-label">
+                        <label
+                            class="form-label"
+                            for="fullName"
+                        >
 
-                            Email
+                            Full Name
 
-                            <span class="required">*</span>
+                            <span class="required">
+                                *
+                            </span>
 
                         </label>
 
-                        <input
-                            type="email"
-                            id="email"
-                            class="form-input"
-                            placeholder="you@example.com"
-                            required
-                            autocomplete="email"
-                        >
 
-                    </div>
+                        <div class="input-wrapper">
 
-                </div>
+                            <i
+                                class="input-icon fa-solid fa-user"
+                                aria-hidden="true"
+                            ></i>
 
 
-                <!-- PASSWORD -->
-
-                <div class="form-group">
-
-                    <label class="form-label">
-
-                        Password
-
-                        <span class="required">*</span>
-
-                    </label>
-
-
-                    <div class="form-input-wrapper">
-
-                        <input
-                            type="password"
-                            id="password"
-                            class="form-input password-input"
-                            placeholder="Create a strong password"
-                            required
-                            minlength="8"
-                            maxlength="100"
-                            autocomplete="new-password"
-                        >
-
-                        <button
-                            type="button"
-                            class="password-toggle"
-                            onclick="togglePassword('password', this)"
-                        >
-                            Show
-                        </button>
-
-                    </div>
-
-
-                    <div class="password-requirements">
-
-                        <p>Password must contain:</p>
-
-                        <ul>
-
-                            <li id="lengthRule">
-                                At least 8 characters
-                            </li>
-
-                            <li id="upperRule">
-                                One uppercase letter
-                            </li>
-
-                            <li id="lowerRule">
-                                One lowercase letter
-                            </li>
-
-                            <li id="numberRule">
-                                One number
-                            </li>
-
-                            <li id="specialRule">
-                                One special character
-                            </li>
-
-                        </ul>
-
-                    </div>
-
-
-                    <div class="password-strength">
-
-                        <div class="strength-bar">
-
-                            <div
-                                id="strengthFill"
-                                class="strength-fill"
-                            ></div>
+                            <input
+                                type="text"
+                                id="fullName"
+                                class="form-input"
+                                placeholder="Enter your full name"
+                                required
+                                minlength="2"
+                                maxlength="100"
+                                autocomplete="name"
+                            >
 
                         </div>
 
-                        <span
-                            id="strengthText"
-                            class="strength-text"
+                    </div>
+
+
+                    <!-- USERNAME + EMAIL -->
+
+                    <div class="form-row">
+
+
+                        <!-- USERNAME -->
+
+                        <div class="form-group">
+
+                            <label
+                                class="form-label"
+                                for="username"
+                            >
+
+                                Username
+
+                                <span class="required">
+                                    *
+                                </span>
+
+                            </label>
+
+
+                            <div class="input-wrapper">
+
+                                <i
+                                    class="input-icon fa-solid fa-at"
+                                    aria-hidden="true"
+                                ></i>
+
+
+                                <input
+                                    type="text"
+                                    id="username"
+                                    class="form-input"
+                                    placeholder="Choose username"
+                                    required
+                                    minlength="3"
+                                    maxlength="50"
+                                    autocomplete="username"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- EMAIL -->
+
+                        <div class="form-group">
+
+                            <label
+                                class="form-label"
+                                for="email"
+                            >
+
+                                Email
+
+                                <span class="required">
+                                    *
+                                </span>
+
+                            </label>
+
+
+                            <div class="input-wrapper">
+
+                                <i
+                                    class="input-icon fa-solid fa-envelope"
+                                    aria-hidden="true"
+                                ></i>
+
+
+                                <input
+                                    type="email"
+                                    id="email"
+                                    class="form-input"
+                                    placeholder="you@example.com"
+                                    required
+                                    autocomplete="email"
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PASSWORD -->
+
+                    <div class="form-group">
+
+
+                        <label
+                            class="form-label"
+                            for="password"
                         >
-                            Password strength
+
+                            Password
+
+                            <span class="required">
+                                *
+                            </span>
+
+                        </label>
+
+
+                        <div class="input-wrapper">
+
+
+                            <i
+                                class="input-icon fa-solid fa-lock"
+                                aria-hidden="true"
+                            ></i>
+
+
+                            <input
+                                type="password"
+                                id="password"
+                                class="form-input password-input"
+                                placeholder="Create a strong password"
+                                required
+                                minlength="8"
+                                maxlength="100"
+                                autocomplete="new-password"
+                            >
+
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('password', this)"
+                            >
+                                Show
+                            </button>
+
+                        </div>
+
+
+                        <!-- PASSWORD REQUIREMENTS -->
+
+                        <div class="password-requirements">
+
+                            <p>
+                                Password must contain:
+                            </p>
+
+
+                            <ul>
+
+                                <li id="lengthRule">
+                                    At least 8 characters
+                                </li>
+
+                                <li id="upperRule">
+                                    One uppercase letter
+                                </li>
+
+                                <li id="lowerRule">
+                                    One lowercase letter
+                                </li>
+
+                                <li id="numberRule">
+                                    One number
+                                </li>
+
+                                <li id="specialRule">
+                                    One special character
+                                </li>
+
+                            </ul>
+
+                        </div>
+
+
+                        <!-- STRENGTH -->
+
+                        <div class="password-strength">
+
+                            <div class="strength-bar">
+
+                                <div
+                                    id="strengthFill"
+                                    class="strength-fill"
+                                ></div>
+
+                            </div>
+
+
+                            <span
+                                id="strengthText"
+                                class="strength-text"
+                            >
+                                Password strength
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CONFIRM PASSWORD -->
+
+                    <div class="form-group">
+
+
+                        <label
+                            class="form-label"
+                            for="confirmPassword"
+                        >
+
+                            Confirm Password
+
+                            <span class="required">
+                                *
+                            </span>
+
+                        </label>
+
+
+                        <div class="input-wrapper">
+
+
+                            <i
+                                class="input-icon fa-solid fa-lock"
+                                aria-hidden="true"
+                            ></i>
+
+
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                class="form-input password-input"
+                                placeholder="Re-enter your password"
+                                required
+                                minlength="8"
+                                maxlength="100"
+                                autocomplete="new-password"
+                            >
+
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('confirmPassword', this)"
+                            >
+                                Show
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CREATE ACCOUNT -->
+
+                    <button
+                        type="submit"
+                        class="auth-button"
+                        id="signupButton"
+                    >
+
+                        <i
+                            class="fa-solid fa-user-plus"
+                            aria-hidden="true"
+                        ></i>
+
+                        <span>
+                            Create Account
                         </span>
 
-                    </div>
+                    </button>
+
+
+                </form>
+
+
+                <!-- FOOTER -->
+
+                <div class="auth-footer">
+
+                    Already have an account?
+
+                    <a
+                        href="/login"
+                        class="auth-link"
+                    >
+                        Sign in
+                    </a>
 
                 </div>
 
-
-                <!-- CONFIRM PASSWORD -->
-
-                <div class="form-group">
-
-                    <label class="form-label">
-
-                        Confirm Password
-
-                        <span class="required">*</span>
-
-                    </label>
-
-
-                    <div class="form-input-wrapper">
-
-                        <input
-                            type="password"
-                            id="confirmPassword"
-                            class="form-input password-input"
-                            placeholder="Re-enter your password"
-                            required
-                            minlength="8"
-                            maxlength="100"
-                            autocomplete="new-password"
-                        >
-
-                        <button
-                            type="button"
-                            class="password-toggle"
-                            onclick="togglePassword('confirmPassword', this)"
-                        >
-                            Show
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <!-- SUBMIT -->
-
-                <button
-                    type="submit"
-                    class="auth-button"
-                    id="signupButton"
-                >
-                    Create Account
-                </button>
-
-            </form>
-
-
-            <div class="auth-footer">
-
-                Already have an account?
-
-                <a
-                    href="/login"
-                    class="auth-link"
-                >
-                    Sign in
-                </a>
 
             </div>
 
         </section>
 
-    </div>
 
-</div>
+    </main>
 
 
-<script>
+    <script>
 
-/* =========================================================
-   PASSWORD TOGGLE
-========================================================= */
+        /* =====================================================
+           PASSWORD TOGGLE
+        ===================================================== */
 
-function togglePassword(inputId, button) {
-
-    const input =
-        document.getElementById(inputId);
-
-    if (input.type === "password") {
-
-        input.type = "text";
-        button.textContent = "Hide";
-
-    } else {
-
-        input.type = "password";
-        button.textContent = "Show";
-
-    }
-
-}
-
-
-/* =========================================================
-   MESSAGE
-========================================================= */
-
-function showMessage(message, type = "error") {
-
-    const box =
-        document.getElementById("message");
-
-    box.textContent = message;
-
-    box.className =
-        "auth-message show " + type;
-
-}
-
-
-/* =========================================================
-   PASSWORD VALIDATION
-========================================================= */
-
-function validatePassword(password) {
-
-    return {
-
-        length:
-            password.length >= 8,
-
-        upper:
-            /[A-Z]/.test(password),
-
-        lower:
-            /[a-z]/.test(password),
-
-        number:
-            /[0-9]/.test(password),
-
-        special:
-            /[^A-Za-z0-9]/.test(password)
-
-    };
-
-}
-
-
-/* =========================================================
-   PASSWORD RULE UI
-========================================================= */
-
-document
-    .getElementById("password")
-    .addEventListener("input", function() {
-
-        const password = this.value;
-
-        const rules =
-            validatePassword(password);
-
-
-        document
-            .getElementById("lengthRule")
-            .classList.toggle(
-                "valid",
-                rules.length
-            );
-
-
-        document
-            .getElementById("upperRule")
-            .classList.toggle(
-                "valid",
-                rules.upper
-            );
-
-
-        document
-            .getElementById("lowerRule")
-            .classList.toggle(
-                "valid",
-                rules.lower
-            );
-
-
-        document
-            .getElementById("numberRule")
-            .classList.toggle(
-                "valid",
-                rules.number
-            );
-
-
-        document
-            .getElementById("specialRule")
-            .classList.toggle(
-                "valid",
-                rules.special
-            );
-
-
-        const score =
-            Object.values(rules)
-                .filter(Boolean)
-                .length;
-
-
-        const fill =
-            document.getElementById(
-                "strengthFill"
-            );
-
-        const text =
-            document.getElementById(
-                "strengthText"
-            );
-
-
-        if (!password) {
-
-            fill.style.width = "0%";
-            text.textContent =
-                "Password strength";
-
-        } else if (score <= 2) {
-
-            fill.style.width = "30%";
-            text.textContent =
-                "Weak password";
-
-        } else if (score <= 4) {
-
-            fill.style.width = "70%";
-            text.textContent =
-                "Good password";
-
-        } else {
-
-            fill.style.width = "100%";
-            text.textContent =
-                "Strong password";
-
-        }
-
-    });
-
-
-/* =========================================================
-   SIGNUP
-========================================================= */
-
-document
-    .getElementById("signupForm")
-    .addEventListener("submit", async function(event) {
-
-        event.preventDefault();
-
-
-        const fullName =
-            document.getElementById(
-                "fullName"
-            ).value.trim();
-
-
-        const username =
-            document.getElementById(
-                "username"
-            ).value.trim();
-
-
-        const email =
-            document.getElementById(
-                "email"
-            ).value.trim();
-
-
-        const password =
-            document.getElementById(
-                "password"
-            ).value;
-
-
-        const confirmPassword =
-            document.getElementById(
-                "confirmPassword"
-            ).value;
-
-
-        const button =
-            document.getElementById(
-                "signupButton"
-            );
-
-
-        /* Password validation */
-
-        const rules =
-            validatePassword(password);
-
-
-        if (
-            !rules.length ||
-            !rules.upper ||
-            !rules.lower ||
-            !rules.number ||
-            !rules.special
+        function togglePassword(
+            inputId,
+            button
         ) {
 
-            showMessage(
-                "Please create a password that meets all requirements."
-            );
-
-            return;
-
-        }
-
-
-        /* Confirm password */
-
-        if (password !== confirmPassword) {
-
-            showMessage(
-                "Passwords do not match."
-            );
-
-            return;
-
-        }
-
-
-        button.disabled = true;
-        button.textContent =
-            "Creating account...";
-
-
-        try {
-
-            const response =
-                await fetch(
-                    "/auth/register",
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body: JSON.stringify({
-
-                            full_name:
-                                fullName,
-
-                            username:
-                                username,
-
-                            email:
-                                email,
-
-                            password:
-                                password,
-
-                            confirm_password:
-                                confirmPassword
-
-                        })
-
-                    }
+            const input =
+                document.getElementById(
+                    inputId
                 );
 
 
-            const data =
-                await response.json();
+            if (
+                input.type ===
+                "password"
+            ) {
 
+                input.type =
+                    "text";
 
-            if (!response.ok) {
+                button.textContent =
+                    "Hide";
 
-                let errorMessage =
-                    "Unable to create account.";
+            } else {
 
+                input.type =
+                    "password";
 
-                if (Array.isArray(data.detail)) {
-
-                    errorMessage =
-                        data.detail
-                            .map(
-                                error =>
-                                    error.msg
-                            )
-                            .join(", ");
-
-                } else if (data.detail) {
-
-                    errorMessage =
-                        data.detail;
-
-                }
-
-
-                throw new Error(
-                    errorMessage
-                );
+                button.textContent =
+                    "Show";
 
             }
 
-
-            showMessage(
-                "Account created successfully. Redirecting to login...",
-                "success"
-            );
+        }
 
 
-            setTimeout(function() {
+        /* =====================================================
+           MESSAGE
+        ===================================================== */
 
-                window.location.href =
-                    "/login";
+        function showMessage(
+            message,
+            type = "error"
+        ) {
 
-            }, 1200);
+            const box =
+                document.getElementById(
+                    "message"
+                );
 
 
-        } catch (error) {
+            box.textContent =
+                message;
 
-            showMessage(
-                error.message ||
-                "Unable to connect to the server."
-            );
 
-            button.disabled = false;
-            button.textContent =
-                "Create Account";
+            box.className =
+                "auth-message show " +
+                type;
 
         }
 
-    });
 
-</script>
+        /* =====================================================
+           PASSWORD VALIDATION
+        ===================================================== */
+
+        function validatePassword(
+            password
+        ) {
+
+            return {
+
+                length:
+                    password.length >= 8,
+
+                upper:
+                    /[A-Z]/.test(password),
+
+                lower:
+                    /[a-z]/.test(password),
+
+                number:
+                    /[0-9]/.test(password),
+
+                special:
+                    /[^A-Za-z0-9]/.test(password)
+
+            };
+
+        }
+
+
+        /* =====================================================
+           PASSWORD RULE UI
+        ===================================================== */
+
+        document
+            .getElementById("password")
+            .addEventListener(
+                "input",
+                function () {
+
+                    const password =
+                        this.value;
+
+
+                    const rules =
+                        validatePassword(
+                            password
+                        );
+
+
+                    document
+                        .getElementById(
+                            "lengthRule"
+                        )
+                        .classList.toggle(
+                            "valid",
+                            rules.length
+                        );
+
+
+                    document
+                        .getElementById(
+                            "upperRule"
+                        )
+                        .classList.toggle(
+                            "valid",
+                            rules.upper
+                        );
+
+
+                    document
+                        .getElementById(
+                            "lowerRule"
+                        )
+                        .classList.toggle(
+                            "valid",
+                            rules.lower
+                        );
+
+
+                    document
+                        .getElementById(
+                            "numberRule"
+                        )
+                        .classList.toggle(
+                            "valid",
+                            rules.number
+                        );
+
+
+                    document
+                        .getElementById(
+                            "specialRule"
+                        )
+                        .classList.toggle(
+                            "valid",
+                            rules.special
+                        );
+
+
+                    const score =
+                        Object
+                            .values(rules)
+                            .filter(Boolean)
+                            .length;
+
+
+                    const fill =
+                        document.getElementById(
+                            "strengthFill"
+                        );
+
+
+                    const text =
+                        document.getElementById(
+                            "strengthText"
+                        );
+
+
+                    if (!password) {
+
+                        fill.style.width =
+                            "0%";
+
+                        text.textContent =
+                            "Password strength";
+
+                    }
+
+                    else if (
+                        score <= 2
+                    ) {
+
+                        fill.style.width =
+                            "30%";
+
+                        text.textContent =
+                            "Weak password";
+
+                    }
+
+                    else if (
+                        score <= 4
+                    ) {
+
+                        fill.style.width =
+                            "70%";
+
+                        text.textContent =
+                            "Good password";
+
+                    }
+
+                    else {
+
+                        fill.style.width =
+                            "100%";
+
+                        text.textContent =
+                            "Strong password";
+
+                    }
+
+                }
+            );
+
+
+        /* =====================================================
+           SIGNUP
+        ===================================================== */
+
+        document
+            .getElementById("signupForm")
+            .addEventListener(
+                "submit",
+                async function (event) {
+
+                    event.preventDefault();
+
+
+                    const fullName =
+                        document
+                            .getElementById(
+                                "fullName"
+                            )
+                            .value
+                            .trim();
+
+
+                    const username =
+                        document
+                            .getElementById(
+                                "username"
+                            )
+                            .value
+                            .trim();
+
+
+                    const email =
+                        document
+                            .getElementById(
+                                "email"
+                            )
+                            .value
+                            .trim();
+
+
+                    const password =
+                        document
+                            .getElementById(
+                                "password"
+                            )
+                            .value;
+
+
+                    const confirmPassword =
+                        document
+                            .getElementById(
+                                "confirmPassword"
+                            )
+                            .value;
+
+
+                    const button =
+                        document.getElementById(
+                            "signupButton"
+                        );
+
+
+                    /* -----------------------------------------
+                       BASIC VALIDATION
+                    ----------------------------------------- */
+
+                    if (!fullName) {
+
+                        showMessage(
+                            "Please enter your full name."
+                        );
+
+                        return;
+                    }
+
+
+                    if (!username) {
+
+                        showMessage(
+                            "Please choose a username."
+                        );
+
+                        return;
+                    }
+
+
+                    if (!email) {
+
+                        showMessage(
+                            "Please enter your email address."
+                        );
+
+                        return;
+                    }
+
+
+                    /* -----------------------------------------
+                       PASSWORD VALIDATION
+                    ----------------------------------------- */
+
+                    const rules =
+                        validatePassword(
+                            password
+                        );
+
+
+                    if (
+                        !rules.length ||
+                        !rules.upper ||
+                        !rules.lower ||
+                        !rules.number ||
+                        !rules.special
+                    ) {
+
+                        showMessage(
+                            "Please create a password that meets all requirements."
+                        );
+
+                        return;
+                    }
+
+
+                    /* -----------------------------------------
+                       CONFIRM PASSWORD
+                    ----------------------------------------- */
+
+                    if (
+                        password !==
+                        confirmPassword
+                    ) {
+
+                        showMessage(
+                            "Passwords do not match."
+                        );
+
+                        return;
+                    }
+
+
+                    /* -----------------------------------------
+                       LOADING
+                    ----------------------------------------- */
+
+                    button.disabled =
+                        true;
+
+
+                    button.innerHTML =
+                        `
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <span>Creating account...</span>
+                        `;
+
+
+                    try {
+
+
+                        /* -------------------------------------
+                           REGISTER
+                        ------------------------------------- */
+
+                        const response =
+                            await fetch(
+                                "/auth/register",
+                                {
+
+                                    method:
+                                        "POST",
+
+                                    headers:
+                                        {
+                                            "Content-Type":
+                                                "application/json"
+                                        },
+
+                                    body:
+                                        JSON.stringify(
+                                            {
+
+                                                full_name:
+                                                    fullName,
+
+                                                username:
+                                                    username,
+
+                                                email:
+                                                    email,
+
+                                                password:
+                                                    password,
+
+                                                confirm_password:
+                                                    confirmPassword
+
+                                            }
+                                        )
+
+                                }
+                            );
+
+
+                        const data =
+                            await response.json();
+
+
+                        /* -------------------------------------
+                           ERROR RESPONSE
+                        ------------------------------------- */
+
+                        if (
+                            !response.ok
+                        ) {
+
+                            let errorMessage =
+                                "Unable to create account.";
+
+
+                            if (
+                                Array.isArray(
+                                    data.detail
+                                )
+                            ) {
+
+                                errorMessage =
+                                    data.detail
+                                        .map(
+                                            error =>
+                                                error.msg
+                                        )
+                                        .join(
+                                            ", "
+                                        );
+
+                            }
+
+                            else if (
+                                data.detail
+                            ) {
+
+                                errorMessage =
+                                    data.detail;
+
+                            }
+
+
+                            throw new Error(
+                                errorMessage
+                            );
+
+                        }
+
+
+                        /* -------------------------------------
+                           SUCCESS
+                        ------------------------------------- */
+
+                        showMessage(
+                            "Account created successfully. Redirecting to login...",
+                            "success"
+                        );
+
+
+                        setTimeout(
+                            function () {
+
+                                window.location.href =
+                                    "/login";
+
+                            },
+                            1200
+                        );
+
+
+                    }
+
+
+                    catch (error) {
+
+                        console.error(
+                            "Signup error:",
+                            error
+                        );
+
+
+                        showMessage(
+                            error.message ||
+                            "Unable to connect to the server."
+                        );
+
+
+                        button.disabled =
+                            false;
+
+
+                        button.innerHTML =
+                            `
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Create Account</span>
+                            `;
+
+                    }
+
+                }
+            );
+
+    </script>
 
 </body>
+
 </html>
