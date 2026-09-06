@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 
-from app.mongodb import (
+from backend.app.mongodb import (
     billing_collection,
     log_collection,
     slot_collection,

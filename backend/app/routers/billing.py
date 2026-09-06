@@ -1,48 +1,41 @@
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 
-from app.models.parking_model import ParkingModel
-from app.mongodb import parking_collection
+from backend.app.models.billing_model import BillingModel
+from backend.app.mongodb import billing_collection
 
 
 router = APIRouter(
-    prefix="/parking",
-    tags=["Parking"]
+    prefix="/billing",
+    tags=["Billing"]
 )
 
 
 # =========================================================
-# CREATE PARKING RECORD
+# CREATE BILLING
 # =========================================================
 
 @router.post("/")
-def create_parking(
-    parking: ParkingModel
-):
+def create_bill(bill: BillingModel):
 
     try:
 
-        parking_dict = parking.model_dump()
+        bill_dict = bill.model_dump()
 
-        result = parking_collection.insert_one(
-            parking_dict
+        result = billing_collection.insert_one(
+            bill_dict
         )
 
         return {
-            "message":
-                "Parking Record Created Successfully",
-
-            "inserted_id":
-                str(result.inserted_id),
-
-            "data":
-                parking_dict
+            "message": "Billing Created Successfully",
+            "inserted_id": str(
+                result.inserted_id
+            ),
+            "data": bill_dict
         }
-
 
     except HTTPException:
         raise
-
 
     except PyMongoError as e:
 
@@ -50,7 +43,6 @@ def create_parking(
             status_code=500,
             detail=f"Database Error: {str(e)}"
         )
-
 
     except Exception as e:
 
@@ -61,45 +53,25 @@ def create_parking(
 
 
 # =========================================================
-# GET ALL PARKING RECORDS
+# GET ALL BILLS
 # =========================================================
 
 @router.get("/")
-def get_parking_records():
+def get_bills():
 
     try:
 
-        records = list(
-
-            parking_collection.find(
+        bills = list(
+            billing_collection.find(
                 {},
-                {
-                    "_id": 0
-                }
+                {"_id": 0}
+            ).sort(
+                "billing_time",
+                -1
             )
         )
 
-
-        if not records:
-
-            raise HTTPException(
-                status_code=404,
-                detail="No Parking Records Found"
-            )
-
-
-        return {
-            "count":
-                len(records),
-
-            "data":
-                records
-        }
-
-
-    except HTTPException:
-        raise
-
+        return bills
 
     except PyMongoError as e:
 
@@ -107,7 +79,6 @@ def get_parking_records():
             status_code=500,
             detail=f"Database Error: {str(e)}"
         )
-
 
     except Exception as e:
 
@@ -118,47 +89,61 @@ def get_parking_records():
 
 
 # =========================================================
-# GET PARKING RECORD BY VEHICLE ID
+# GET BILL BY VEHICLE NUMBER
 # =========================================================
 
-@router.get("/{vehicle_id}")
-def get_parking_by_vehicle(
-    vehicle_id: int
+@router.get("/{vehicle_number}")
+def get_bill(
+    vehicle_number: str
 ):
 
     try:
 
-        record = parking_collection.find_one(
+        vehicle_number = (
+            vehicle_number
+            .strip()
+            .upper()
+        )
+
+        if not vehicle_number:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Vehicle number is required"
+            )
+
+        bill = billing_collection.find_one(
             {
-                "vehicle_id":
-                    vehicle_id
+                "vehicle_number":
+                    vehicle_number
             },
             {
                 "_id": 0
-            }
+            },
+            sort=[
+                (
+                    "billing_time",
+                    -1
+                )
+            ]
         )
 
-
-        if not record:
+        if not bill:
 
             raise HTTPException(
                 status_code=404,
                 detail=(
-                    f"No Record Found for "
-                    f"Vehicle ID {vehicle_id}"
+                    f"No Bill Found for "
+                    f"{vehicle_number}"
                 )
             )
 
-
         return {
-            "data":
-                record
+            "data": bill
         }
-
 
     except HTTPException:
         raise
-
 
     except PyMongoError as e:
 
@@ -166,7 +151,6 @@ def get_parking_by_vehicle(
             status_code=500,
             detail=f"Database Error: {str(e)}"
         )
-
 
     except Exception as e:
 

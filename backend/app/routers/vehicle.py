@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 
-from app.models.vehicle_model import VehicleModel
-from app.mongodb import vehicle_collection
+from backend.app.models.vehicle_model import VehicleModel
+from backend.app.mongodb import vehicle_collection
 
 
 router = APIRouter(

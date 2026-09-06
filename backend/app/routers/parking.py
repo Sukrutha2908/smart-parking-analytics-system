@@ -1,47 +1,42 @@
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 
-from app.models.transaction_model import TransactionModel
-from app.mongodb import transaction_collection
+from backend.app.models.parking_model import ParkingModel
+from backend.app.mongodb import parking_collection
 
 
 router = APIRouter(
-    prefix="/transaction",
-    tags=["Transaction"]
+    prefix="/parking",
+    tags=["Parking"]
 )
 
 
 # =========================================================
-# CREATE TRANSACTION
+# CREATE PARKING RECORD
 # =========================================================
 
 @router.post("/")
-def create_transaction(
-    transaction: TransactionModel
+def create_parking(
+    parking: ParkingModel
 ):
 
     try:
 
-        transaction_dict = (
-            transaction.model_dump()
-        )
+        parking_dict = parking.model_dump()
 
-        result = transaction_collection.insert_one(
-            transaction_dict
+        result = parking_collection.insert_one(
+            parking_dict
         )
 
         return {
-
             "message":
-                "Transaction Successful",
+                "Parking Record Created Successfully",
 
             "inserted_id":
-                str(
-                    result.inserted_id
-                ),
+                str(result.inserted_id),
 
             "data":
-                transaction_dict
+                parking_dict
         }
 
 
@@ -66,45 +61,39 @@ def create_transaction(
 
 
 # =========================================================
-# GET ALL TRANSACTIONS
+# GET ALL PARKING RECORDS
 # =========================================================
 
 @router.get("/")
-def get_transactions():
+def get_parking_records():
 
     try:
 
-        transactions = list(
+        records = list(
 
-            transaction_collection
-            .find(
+            parking_collection.find(
                 {},
                 {
                     "_id": 0
                 }
             )
-            .sort(
-                "transaction_time",
-                -1
-            )
         )
 
 
-        if not transactions:
+        if not records:
 
             raise HTTPException(
                 status_code=404,
-                detail="No Transactions Found"
+                detail="No Parking Records Found"
             )
 
 
         return {
-
             "count":
-                len(transactions),
+                len(records),
 
             "data":
-                transactions
+                records
         }
 
 
@@ -129,44 +118,41 @@ def get_transactions():
 
 
 # =========================================================
-# GET TRANSACTION BY ID
+# GET PARKING RECORD BY VEHICLE ID
 # =========================================================
 
-@router.get("/{transaction_id}")
-def get_transaction(
-    transaction_id: str
+@router.get("/{vehicle_id}")
+def get_parking_by_vehicle(
+    vehicle_id: int
 ):
 
     try:
 
-        transaction = (
-            transaction_collection
-            .find_one(
-                {
-                    "transaction_id":
-                        transaction_id
-                },
-                {
-                    "_id": 0
-                }
-            )
+        record = parking_collection.find_one(
+            {
+                "vehicle_id":
+                    vehicle_id
+            },
+            {
+                "_id": 0
+            }
         )
 
 
-        if not transaction:
+        if not record:
 
             raise HTTPException(
                 status_code=404,
                 detail=(
-                    f"No Transaction Found "
-                    f"for ID {transaction_id}"
+                    f"No Record Found for "
+                    f"Vehicle ID {vehicle_id}"
                 )
             )
 
 
         return {
             "data":
-                transaction
+                record
         }
 
 

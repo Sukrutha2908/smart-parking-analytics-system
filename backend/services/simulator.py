@@ -5,7 +5,7 @@ import json
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 
-from app.mongodb import slot_collection
+from backend.app.mongodb import slot_collection
 
 
 # =========================================================

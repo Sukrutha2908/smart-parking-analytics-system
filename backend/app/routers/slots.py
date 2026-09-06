@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 
-from app.mongodb import slot_collection
+from backend.app.mongodb import slot_collection
 
 
 router = APIRouter()

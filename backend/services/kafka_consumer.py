@@ -7,7 +7,7 @@ from datetime import datetime
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 
-from app.mongodb import (
+from backend.app.mongodb import (
     slot_collection,
     parking_collection,
     log_collection,

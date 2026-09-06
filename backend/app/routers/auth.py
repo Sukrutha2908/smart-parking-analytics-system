@@ -3,16 +3,16 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pymongo.errors import PyMongoError
 from datetime import datetime
 
-from app.mongodb import users_collection
+from backend.app.mongodb import users_collection
 
-from app.models.auth_model import (
+from backend.app.models.auth_model import (
     UserRegister,
     UserLogin,
     Token,
     UserResponse
 )
 
-from app.auth_utils import (
+from backend.app.auth_utils import (
     hash_password,
     verify_password,
     create_access_token,

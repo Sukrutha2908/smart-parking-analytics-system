@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers.auth import get_current_user
+from backend.app.routers.auth import get_current_user
 from pydantic import BaseModel
 
 from datetime import datetime
@@ -11,19 +11,19 @@ from uuid import uuid4
 from dotenv import load_dotenv
 import os
 
-from app.websocket_manager import manager
+from backend.app.websocket_manager import manager
 
 # =========================================================
 # ROUTERS
 # =========================================================
 
-from app.routers import parking
-from app.routers import vehicle
-from app.routers import slots
-from app.routers import billing
-from app.routers import transaction
-from app.routers import analytics
-from app.routers import auth
+from backend.app.routers import parking
+from backend.app.routers import vehicle
+from backend.app.routers import slots
+from backend.app.routers import billing
+from backend.app.routers import transaction
+from backend.app.routers import analytics
+from backend.app.routers import auth
 
 
 # =========================================================
@@ -205,7 +205,7 @@ app.include_router(auth.router)
 # MONGODB CONNECTION
 # =========================================================
 
-from app.mongodb import (
+from backend.app.mongodb import (
     slot_collection,
     vehicle_collection,
     log_collection,
@@ -328,7 +328,7 @@ class VehicleEntry(BaseModel):
 async def favicon():
 
     return FileResponse(
-        "app/static/favicon.ico"
+                "app/static/favicon.ico"
     )
 
 
