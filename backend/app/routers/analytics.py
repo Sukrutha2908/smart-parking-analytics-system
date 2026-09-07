@@ -1,7 +1,13 @@
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
+
+# =========================================================
+# DATE RANGE HELPER
+# =========================================================
+
 
 from backend.app.mongodb import (
     billing_collection,
@@ -158,81 +164,271 @@ def parking_occupancy():
 # REVENUE
 # =========================================================
 
+# =========================================================
+# REVENUE
+# =========================================================
+
 @router.get("/revenue")
-def revenue():
+def revenue(filter: str = "current"):
 
     try:
 
+        # -----------------------------------------------
+        # Validate filter
+        # -----------------------------------------------
+
+        if filter not in {
+            "current",
+            "last",
+            "month",
+        }:
+            filter = "current"
+
+
+        # -----------------------------------------------
+        # Get exact date range
+        # -----------------------------------------------
+
+        start_dt, end_dt = _get_date_range(filter)
+
+
+        # -----------------------------------------------
+        # Current / Last week
+        # -----------------------------------------------
+
+        if filter in {"current", "last"}:
+
+            pipeline = [
+
+                {
+                    "$match": {
+
+                        "billing_time": {
+                            "$gte": start_dt,
+                            "$lt": end_dt,
+                        },
+
+                        "amount": {
+                            "$exists": True,
+                            "$ne": None,
+                        },
+                    }
+                },
+
+                {
+                    "$group": {
+
+                        "_id": {
+                            "$dayOfWeek": {
+
+                                "date": "$billing_time",
+
+                                "timezone":
+                                    "Asia/Kolkata",
+                            }
+                        },
+
+                        "total_revenue": {
+                            "$sum": "$amount",
+                        },
+                    }
+                },
+            ]
+
+
+            result = list(
+                billing_collection.aggregate(
+                    pipeline
+                )
+            )
+
+
+            day_map = _day_map()
+
+            revenue_map = {
+                day: 0
+                for day in _week_labels()
+            }
+
+
+            for item in result:
+
+                day = day_map.get(
+                    item.get("_id")
+                )
+
+                if day:
+
+                    revenue_map[day] = (
+                        item.get(
+                            "total_revenue"
+                        ) or 0
+                    )
+
+
+            labels = _week_labels()
+
+
+            return {
+
+                "labels": labels,
+
+                "values": [
+                    revenue_map[day]
+                    for day in labels
+                ],
+
+                "filter": filter,
+
+                "start_date":
+                    start_dt.isoformat(),
+
+                "end_date":
+                    end_dt.isoformat(),
+            }
+
+
+        # -----------------------------------------------
+        # Current month
+        # -----------------------------------------------
+
         pipeline = [
+
             {
                 "$match": {
+
                     "billing_time": {
-                        "$exists": True,
-                        "$ne": None,
+                        "$gte": start_dt,
+                        "$lt": end_dt,
                     },
+
                     "amount": {
                         "$exists": True,
                         "$ne": None,
                     },
                 }
             },
+
             {
                 "$group": {
+
                     "_id": {
-                        "$dayOfWeek": {
+
+                        "$dateToString": {
+
+                            "format": "%Y-%m-%d",
+
                             "date": "$billing_time",
-                            "timezone": "Asia/Kolkata",
+
+                            "timezone":
+                                "Asia/Kolkata",
                         }
                     },
+
                     "total_revenue": {
                         "$sum": "$amount",
                     },
                 }
             },
+
+            {
+                "$sort": {
+                    "_id": 1
+                }
+            },
         ]
 
+
         result = list(
-            billing_collection.aggregate(pipeline)
+            billing_collection.aggregate(
+                pipeline
+            )
         )
 
-        day_map = _day_map()
 
-        weekly_data = {
-            day: 0
-            for day in _week_labels()
+        # -----------------------------------------------
+        # Build every day of the month
+        # -----------------------------------------------
+
+        labels = []
+
+        values = []
+
+
+        current_date = start_dt.astimezone(
+            IST
+        ).date()
+
+        end_date = end_dt.astimezone(
+            IST
+        ).date()
+
+
+        revenue_map = {
+
+            item["_id"]:
+                item.get(
+                    "total_revenue"
+                ) or 0
+
+            for item in result
         }
 
-        for item in result:
 
-            day = day_map.get(item.get("_id"))
+        while current_date < end_date:
 
-            if day:
-                weekly_data[day] = (
-                    item.get("total_revenue") or 0
+            date_key = current_date.strftime(
+                "%Y-%m-%d"
+            )
+
+            labels.append(
+                current_date.strftime(
+                    "%d %b"
                 )
+            )
 
-        labels = _week_labels()
+            values.append(
+                revenue_map.get(
+                    date_key,
+                    0
+                )
+            )
+
+            current_date += timedelta(
+                days=1
+            )
+
 
         return {
+
             "labels": labels,
-            "values": [
-                weekly_data[day]
-                for day in labels
-            ],
+
+            "values": values,
+
+            "filter": filter,
+
+            "start_date":
+                start_dt.isoformat(),
+
+            "end_date":
+                end_dt.isoformat(),
         }
 
+
     except PyMongoError as e:
+
         raise HTTPException(
             status_code=500,
             detail=f"Database Error: {str(e)}",
         )
 
+
     except Exception as e:
+
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected Error: {str(e)}",
         )
-
 
 # =========================================================
 # WEEKLY REVENUE
