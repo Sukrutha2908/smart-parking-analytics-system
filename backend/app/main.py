@@ -4,9 +4,11 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routers.auth import get_current_user
 from pydantic import BaseModel
+from pymongo.errors import PyMongoError
 
 from datetime import datetime
 from uuid import uuid4
+from bson import ObjectId
 
 from dotenv import load_dotenv
 import os
@@ -928,10 +930,7 @@ def get_logs(
         docs = list(
 
             log_collection.find(
-                query,
-                {
-                    "_id": 0
-                }
+                query
             )
 
             .sort(
@@ -955,6 +954,9 @@ def get_logs(
         for d in docs:
 
             results.append({
+
+                "id":
+                    str(d["_id"]),
 
                 "vehicle_number":
                     d.get(
@@ -1036,3 +1038,54 @@ def get_logs(
             "error":
                 str(e)
         }
+
+# =========================================================
+# DELETE PARKING LOG
+# =========================================================
+
+@app.delete("/logs/{log_id}")
+async def delete_log(log_id: str):
+    try:
+        obj_id = ObjectId(log_id)
+
+        log = log_collection.find_one({"_id": obj_id})
+
+        if not log:
+            raise HTTPException(
+                status_code=404,
+                detail="Parking log not found"
+            )
+
+        # Free slot if this is an active parking session
+        if log.get("exit_time") is None:
+            slot_number = log.get("slot_number")
+
+            if slot_number:
+                slot_collection.update_one(
+                    {"slot_number": slot_number},
+                    {
+                        "$set": {
+                            "status": "available",
+                            "vehicle_number": None
+                        }
+                    }
+                )
+
+        result = log_collection.delete_one({"_id": obj_id})
+
+        if result.deleted_count == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Parking log could not be deleted"
+            )
+
+        return {
+            "success": True,
+            "message": "Parking log deleted successfully"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )

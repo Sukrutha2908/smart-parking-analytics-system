@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+IST = ZoneInfo("Asia/Kolkata")
 
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
@@ -442,7 +443,7 @@ def weekly_revenue(filter: str = "current"):
         if filter not in {
             "current",
             "last",
-            "month",
+            
         }:
             filter = "current"
 

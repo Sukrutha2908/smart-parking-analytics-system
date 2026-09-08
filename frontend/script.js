@@ -4,10 +4,134 @@
    AUTHENTICATION GUARD
 ========================================= */
 
+'use strict';
+
+/* =========================================
+   AUTHENTICATION GUARD
+========================================= */
+
 const accessToken = localStorage.getItem('access_token');
 
 if (!accessToken) {
     window.location.replace('/login');
+}
+
+
+/* =========================================
+   WELCOME POPUP
+========================================= */
+
+function showWelcomePopup() {
+
+    if (!accessToken) return;
+
+    try {
+
+        /*
+         * Decode the JWT payload
+         */
+        const payload =
+            JSON.parse(
+                atob(
+                    accessToken.split('.')[1]
+                        .replace(/-/g, '+')
+                        .replace(/_/g, '/')
+                )
+            );
+
+        /*
+         * Try common username fields
+         */
+        const username =
+            payload.username ||
+            payload.user_name ||
+            payload.name ||
+            payload.sub ||
+            'User';
+
+        /*
+         * Show popup only for a new login token.
+         * Refreshing the dashboard will not show it again.
+         */
+        const previousToken =
+            sessionStorage.getItem(
+                'welcome_token'
+            );
+
+        if (previousToken === accessToken) {
+            return;
+        }
+
+        sessionStorage.setItem(
+            'welcome_token',
+            accessToken
+        );
+
+
+        const popup =
+            document.createElement('div');
+
+        popup.className =
+            'welcome-popup';
+
+        popup.innerHTML = `
+
+            <div class="welcome-popup-content">
+
+                <div class="welcome-icon">
+                    👋
+                </div>
+
+                <div>
+
+                    <h3>
+                        Hi, ${username}!
+                    </h3>
+
+                    <p>
+                        Welcome back to Smart Parking Analytics.
+                    </p>
+
+                </div>
+
+            </div>
+
+        `;
+
+        document.body.appendChild(popup);
+
+
+        setTimeout(() => {
+
+            popup.classList.add('show');
+
+        }, 50);
+
+
+        setTimeout(() => {
+
+            popup.classList.remove('show');
+
+            setTimeout(() => {
+
+                popup.remove();
+
+            }, 300);
+
+        }, 3000);
+
+
+    } catch (error) {
+
+        console.error(
+            'Welcome popup error:',
+            error
+        );
+    }
+}
+
+if (accessToken) {
+    setTimeout(showWelcomePopup, 300);
 }
 
 
@@ -61,28 +185,6 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     });
 });
 
-
-/* =========================================
-   ALERTS
-========================================= */
-
-function showAlert(message, type = 'success') {
-
-    const box =
-        document.getElementById('alertBox');
-
-    if (!box) return;
-
-    box.textContent = message;
-
-    box.className = `alert ${type}`;
-
-    box.classList.remove('hidden');
-
-    setTimeout(() => {
-        box.classList.add('hidden');
-    }, 3000);
-}
 
 
 /* =========================================
@@ -940,7 +1042,7 @@ async function registerEntry() {
         !vehicleType
     ) {
 
-        showAlert(
+        alert(
             'Enter vehicle number and select vehicle type',
             'error'
         );
@@ -972,7 +1074,7 @@ async function registerEntry() {
 
         if (!ok) {
 
-            showAlert(
+            alert(
                 data?.error ||
                 data?.detail ||
                 'Entry failed',
@@ -983,7 +1085,7 @@ async function registerEntry() {
         }
 
 
-        showAlert(
+        alert(
             `Vehicle registered — slot ${data.slot_allocated} assigned`
         );
 
@@ -1009,7 +1111,7 @@ async function registerEntry() {
 
         console.error(error);
 
-        showAlert(
+        alert(
             'Entry failed',
             'error'
         );
@@ -1034,7 +1136,7 @@ async function processExit() {
 
     if (!vehicleNumber) {
 
-        showAlert(
+        alert(
             'Enter vehicle number',
             'error'
         );
@@ -1061,7 +1163,7 @@ async function processExit() {
 
     if (!ok) {
 
-        showAlert(
+        alert(
             data?.detail ||
             'Error processing exit',
             'error'
@@ -1071,7 +1173,7 @@ async function processExit() {
     }
 
 
-    showAlert(
+    alert(
         data.message
     );
 
@@ -1247,9 +1349,8 @@ async function loadLogs(page = 1) {
 
     if (!ok || !data) {
 
-        showAlert(
-            'Unable to load parking logs',
-            'error'
+        alert(
+            'Unable to load parking logs'
         );
 
         return;
@@ -1444,6 +1545,20 @@ async function loadLogs(page = 1) {
 
                 </td>
 
+                <td> 
+
+                    <button
+                    
+                        type="button"
+                        class="delete-log-btn"
+                        onclick="deleteLog('${log.id}')"
+                    >
+                        Delete
+
+                    </button> 
+
+                </td> 
+
             </tr>
 
         `;
@@ -1456,9 +1571,94 @@ async function loadLogs(page = 1) {
 }
 
 
-/* =========================================
-   FORMAT TIME
-========================================= */
+async function deleteLog(logId) {
+
+    console.log("DELETE LOG ID:", logId);
+
+    if (!logId || logId === "undefined") {
+
+        alert(
+            "Invalid parking log ID"
+        );
+
+        console.error(
+            "Invalid log ID:",
+            logId
+        );
+
+        return;
+    }
+
+    const confirmed = confirm(
+        "Are you sure you want to delete this parking log?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE}/logs/${logId}`,
+            {
+                method: "DELETE",
+
+                headers: {
+                    "Authorization":
+                        `Bearer ${localStorage.getItem("access_token")}`
+                }
+            }
+        );
+
+        console.log(
+            "DELETE STATUS:",
+            response.status
+        );
+
+        const data =
+            await response.json();
+
+        console.log(
+            "DELETE RESPONSE:",
+            data
+        );
+
+        if (!response.ok) {
+
+            alert(
+                data.detail ||
+                "Unable to delete parking log"
+            );
+
+            return;
+        }
+
+        alert(
+            "Parking log deleted successfully"
+        );
+
+        // Reload logs
+        await loadLogs(1);
+
+        // Refresh dashboard statistics
+        await loadDashboardData();
+
+        // Refresh parking slots
+        await loadSlots();
+
+    } catch (error) {
+
+        console.error(
+            "DELETE LOG ERROR:",
+            error
+        );
+
+        alert(
+            "Unable to delete parking log"
+        );
+    }
+}
 
 /* =========================================
    FORMAT TIME - INDIA STANDARD TIME

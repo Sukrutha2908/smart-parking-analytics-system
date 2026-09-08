@@ -78,6 +78,20 @@ select {
 ========================================================= */
 
 .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 250px;
+    height: 100vh;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    z-index: 1000;
+}
+
+.sidebar {
   width: 238px;
   flex: 0 0 238px;
 
@@ -97,10 +111,16 @@ select {
   display: flex;
   flex-direction: column;
 
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
 
   height: 100vh;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  z-index: 1000;
 
   border-right:
     1px solid
@@ -485,6 +505,8 @@ select {
 .main {
   flex: 1;
   min-width: 0;
+
+  margin-left: 238px;
 
   padding: 28px 32px 40px;
 
@@ -1408,6 +1430,7 @@ input[type="text"]::placeholder {
   }
 
   .main {
+    margin-left: 220px;
     padding: 22px 20px 32px;
   }
 
@@ -1519,6 +1542,7 @@ input[type="text"]::placeholder {
 
   .main {
     width: 100%;
+    margin-left: 0;
 
     padding: 20px;
   }
@@ -1583,4 +1607,489 @@ input[type="text"]::placeholder {
     animation: none !important;
     transition: none !important;
   }
+}
+
+
+/* =========================================================
+   MOBILE FIX — PREVENT DASHBOARD FROM BEING CUT OFF
+========================================================= */
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.main {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+}
+
+.view,
+.analytics-layout,
+.bottom-charts,
+.analytics-card,
+.card {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* Charts must stay inside their cards */
+.analytics-card canvas {
+    max-width: 100% !important;
+}
+
+/* Parking logs: scroll ONLY the table */
+.logs-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.logs-table-wrap table {
+    width: 100%;
+    min-width: 850px;
+    border-collapse: collapse;
+}
+
+/* Toolbar should wrap on small screens */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+}
+
+.toolbar input,
+.toolbar select,
+.toolbar button {
+    max-width: 100%;
+}
+
+/* =========================================================
+   PHONE
+========================================================= */
+
+@media (max-width: 560px) {
+
+    body {
+        display: block;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* ---------- MOBILE NAV ---------- */
+
+    .sidebar {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 64px;
+
+        position: relative;
+
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        padding: 10px 12px;
+
+        flex-shrink: 0;
+    }
+
+    .brand {
+        flex-shrink: 0;
+        margin: 0 14px 0 0;
+        padding: 0;
+        border: none;
+    }
+
+    .brand-text {
+        display: none;
+    }
+
+    .logo-box {
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .nav-section-label {
+        display: none;
+    }
+
+    .nav-item {
+        width: auto;
+        min-width: 44px;
+        height: 42px;
+        padding: 8px 10px;
+
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .nav-label {
+        display: none;
+    }
+
+    .nav-icon {
+        margin: 0;
+    }
+
+    .sidebar-footer {
+        display: none;
+    }
+
+    .logout-button {
+        width: auto;
+        min-width: 42px;
+        margin: 0 0 0 6px;
+        padding: 10px;
+        flex-shrink: 0;
+    }
+
+    .logout-button span:last-child {
+        display: none;
+    }
+
+    /* ---------- MAIN ---------- */
+
+    .main {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 14px;
+        overflow-x: hidden;
+    }
+
+    /* ---------- HEADER ---------- */
+
+    .top-header {
+        width: 100%;
+        max-width: 100%;
+
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        align-items: flex-start;
+    }
+
+    .top-header h1 {
+        font-size: 24px;
+        line-height: 1.2;
+    }
+
+    .top-header p {
+        font-size: 12px;
+    }
+
+    .header-meta {
+        width: 100%;
+        max-width: 100%;
+
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        justify-content: space-between;
+    }
+
+    /* ---------- KPI CARDS ---------- */
+
+    .stats-bar {
+        width: 100%;
+        max-width: 100%;
+
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .stat-card {
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* ---------- ANALYTICS ---------- */
+
+    .analytics-layout {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+
+        display: flex;
+        flex-direction: column;
+    }
+
+    .bottom-charts {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+
+        display: flex;
+        flex-direction: column;
+    }
+
+    .analytics-card {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 14px;
+    }
+
+    .small-card,
+    .large-card {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* ---------- CHART HEADER ---------- */
+
+    .card-head {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .card-head h3 {
+        font-size: 15px;
+    }
+
+    .filter-select {
+        max-width: 100%;
+        width: auto;
+    }
+
+    /* ---------- FLOOR GRID ---------- */
+
+    .floor-grid {
+        width: 100%;
+        max-width: 100%;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    /* ---------- GENERAL CARDS ---------- */
+
+    .card {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 15px;
+    }
+
+    /* ---------- LOGS ---------- */
+
+    .logs-table-wrap {
+        width: 100%;
+        max-width: 100%;
+
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        border-radius: 8px;
+    }
+
+    .logs-table-wrap table {
+        min-width: 850px;
+        width: 850px;
+    }
+
+    .logs-table-wrap th,
+    .logs-table-wrap td {
+        white-space: nowrap;
+    }
+
+    /* ---------- LOG SEARCH ---------- */
+
+    .toolbar input {
+        width: 100%;
+        max-width: 100% !important;
+        flex: 1 1 100%;
+    }
+
+    .toolbar select {
+        flex: 1 1 auto;
+    }
+
+    .toolbar button {
+        flex: 0 0 auto;
+    }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+
+    .main {
+        padding: 10px;
+    }
+
+    .analytics-card,
+    .card {
+        padding: 12px;
+    }
+
+    .floor-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .top-header h1 {
+        font-size: 21px;
+    }
+
+    .card-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   WELCOME BACK POPUP
+========================================================= */
+
+
+.welcome-popup {
+    position: fixed;
+
+    top: 25px;
+    left: 50%;
+
+    transform:
+        translateX(-50%)
+        translateY(-20px);
+
+    width: min(90%, 420px);
+
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    padding: 18px 20px;
+
+    box-shadow:
+        0 12px 40px
+        rgba(0, 0, 0, 0.20);
+
+    z-index: 99999;
+
+    opacity: 0;
+
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+}
+
+.welcome-popup.show {
+    opacity: 1;
+
+    transform:
+        translateX(-50%)
+        translateY(0);
+}
+
+.welcome-popup-content {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+}
+
+.welcome-icon {
+    font-size: 32px;
+}
+
+.welcome-popup h3 {
+    margin: 0 0 5px;
+
+    font-size: 19px;
+
+    color: #172033;
+}
+
+.welcome-popup p {
+    margin: 0;
+
+    font-size: 13px;
+
+    color: #6b7688;
+}
+
+
+@media (max-width: 560px) {
+
+    .welcome-popup {
+
+        top: 15px;
+
+        width:
+            calc(100% - 30px);
+
+        padding: 15px;
+    }
+
+    .welcome-icon {
+        font-size: 28px;
+    }
+
+    .welcome-popup h3 {
+        font-size: 17px;
+    }
+
+    .welcome-popup p {
+        font-size: 12px;
+    }
+}
+
+/* =========================================================
+   DELETE LOG BUTTON
+========================================================= */
+
+.delete-log-btn {
+    border: none;
+    background: #FBEAE8;
+    color: #C4443A;
+
+    padding: 6px 12px;
+
+    border-radius: 7px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.15s ease;
+}
+
+.delete-log-btn:hover {
+    background: #C4443A;
+    color: #ffffff;
+}
+
+.delete-log-btn:active {
+    transform: translateY(1px);
 }
