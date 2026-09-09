@@ -97,22 +97,6 @@ def signup_page():
     )
 
 
-@app.get("/forgot-password")
-def forgot_password_page():
-
-    return FileResponse(
-        "frontend/forgot-password.html"
-    )
-
-
-@app.get("/reset-password")
-def reset_password_page():
-
-    return FileResponse(
-        "frontend/reset-password.html"
-    )
-
-
 # =========================================================
 # ROOT
 # =========================================================

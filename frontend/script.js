@@ -143,7 +143,10 @@ const API_BASE = 'http://127.0.0.1:8000';
 
 let allSlots = [];
 
-const PER_PAGE = 500;
+const PER_PAGE = 50;
+
+let currentLogsPage = 1;
+let currentSlotsPage = 1;
 
 
 /* =========================================
@@ -410,11 +413,14 @@ async function loadSlots() {
 }
 
 
+
 /* =========================================
    RENDER SLOTS
 ========================================= */
 
-function renderSlots() {
+function renderSlots(page = 1) {
+
+    currentSlotsPage = page;
 
     const grid =
         document.getElementById('slotGrid');
@@ -423,21 +429,22 @@ function renderSlots() {
 
     grid.innerHTML = '';
 
-
     const floorFilter =
         document.getElementById(
             'floorFilter'
-        )?.value;
-
+        )?.value || 'all';
 
     const statusFilter =
         document.getElementById(
             'statusFilter'
-        )?.value;
+        )?.value || 'all';
 
 
-    let filteredSlots =
-        allSlots;
+    /* -------------------------------------
+       FILTER SLOTS
+    ------------------------------------- */
+
+    let filteredSlots = [...allSlots];
 
 
     if (
@@ -466,7 +473,80 @@ function renderSlots() {
     }
 
 
-    filteredSlots.forEach(slot => {
+    /* -------------------------------------
+       PAGINATION
+    ------------------------------------- */
+
+    const totalSlots =
+        filteredSlots.length;
+
+    const totalPages =
+        Math.ceil(
+            totalSlots / PER_PAGE
+        );
+
+
+    if (
+        page > totalPages &&
+        totalPages > 0
+    ) {
+
+        page = totalPages;
+
+        currentSlotsPage = page;
+    }
+
+
+    const startIndex =
+        (page - 1) * PER_PAGE;
+
+    const endIndex =
+        startIndex + PER_PAGE;
+
+
+    const pageSlots =
+        filteredSlots.slice(
+            startIndex,
+            endIndex
+        );
+
+
+    /* -------------------------------------
+       NO SLOTS
+    ------------------------------------- */
+
+    if (!pageSlots.length) {
+
+        grid.innerHTML = `
+
+            <div
+                style="
+                    grid-column: 1 / -1;
+                    text-align: center;
+                    padding: 30px;
+                    color: #6B7688;
+                "
+            >
+                No parking slots found
+            </div>
+
+        `;
+
+        renderSlotsPagination(
+            totalPages,
+            currentSlotsPage,
+            totalSlots
+        );
+
+        return;
+    }
+
+
+    /* -------------------------------------
+       RENDER CURRENT PAGE
+    ------------------------------------- */
+
+    pageSlots.forEach(slot => {
 
         grid.innerHTML += `
 
@@ -487,8 +567,143 @@ function renderSlots() {
 
         `;
     });
+
+
+    /* -------------------------------------
+       RENDER PAGINATION
+    ------------------------------------- */
+
+    renderSlotsPagination(
+        totalPages,
+        currentSlotsPage,
+        totalSlots
+    );
 }
 
+/* =========================================
+   SLOTS PAGINATION
+========================================= */
+
+function renderSlotsPagination(
+    totalPages,
+    currentPage,
+    totalRecords
+) {
+
+    const container =
+        document.getElementById(
+            'slotsPagination'
+        );
+
+    if (!container) return;
+
+
+    if (
+        !totalPages ||
+        totalPages <= 1
+    ) {
+
+        container.innerHTML = '';
+
+        return;
+    }
+
+
+    let html = '';
+
+
+    const startRecord =
+        ((currentPage - 1) * PER_PAGE) + 1;
+
+
+    const endRecord =
+        Math.min(
+            currentPage * PER_PAGE,
+            totalRecords
+        );
+
+
+    /* -------------------------------------
+       INFORMATION
+    ------------------------------------- */
+
+    html += `
+
+        <div class="logs-pagination-info">
+
+            Showing
+            ${startRecord}–${endRecord}
+            of
+            ${totalRecords}
+            slots
+
+        </div>
+
+    `;
+
+
+    /* -------------------------------------
+       PREVIOUS
+    ------------------------------------- */
+
+    html += `
+
+        <button
+            type="button"
+            ${currentPage === 1 ? 'disabled' : ''}
+            onclick="renderSlots(${currentPage - 1})"
+            aria-label="Previous page"
+        >
+            ‹
+        </button>
+
+    `;
+
+
+    /* -------------------------------------
+       PAGE NUMBERS
+    ------------------------------------- */
+
+    for (
+        let i = 1;
+        i <= totalPages;
+        i++
+    ) {
+
+        html += `
+
+            <button
+                type="button"
+                class="${i === currentPage ? 'active' : ''}"
+                onclick="renderSlots(${i})"
+            >
+                ${i}
+            </button>
+
+        `;
+    }
+
+
+    /* -------------------------------------
+       NEXT
+    ------------------------------------- */
+
+    html += `
+
+        <button
+            type="button"
+            ${currentPage === totalPages ? 'disabled' : ''}
+            onclick="renderSlots(${currentPage + 1})"
+            aria-label="Next page"
+        >
+            ›
+        </button>
+
+    `;
+
+
+    container.innerHTML = html;
+}
 
 /* =========================================
    REVENUE CHART
@@ -1305,21 +1520,21 @@ async function processExit() {
 
 async function loadLogs(page = 1) {
 
+    currentLogsPage = page;
+
     const search =
         document.getElementById(
             'searchVehicle'
         )?.value
         ?.trim() || '';
 
-
     const status =
         document.getElementById(
             'logStatusFilter'
         )?.value || '';
 
-
     /* -------------------------------------
-       Build query safely
+       Build query
     ------------------------------------- */
 
     const params =
@@ -1334,18 +1549,15 @@ async function loadLogs(page = 1) {
             status: status
         });
 
-
     console.log(
         'Loading parking logs:',
         params.toString()
     );
 
-
     const { ok, data } =
         await api(
             `/logs?${params.toString()}`
         );
-
 
     if (!ok || !data) {
 
@@ -1356,40 +1568,45 @@ async function loadLogs(page = 1) {
         return;
     }
 
-
     const tbody =
         document.getElementById(
             'logsBody'
         );
 
-
     if (!tbody) return;
-
 
     tbody.innerHTML = '';
 
-
-    /*
-     * Backend returns:
-     *
-     * {
-     *   page: 1,
-     *   limit: 500,
-     *   count: 100,
-     *   total: 100,
-     *   pages: 1,
-     *   logs: [...]
-     * }
-     *
-     * Support both the new format
-     * and the old array format.
-     */
+    /* -------------------------------------
+       Backend response
+       
+       Expected:
+       {
+           logs: [...],
+           total: 823,
+           page: 1,
+           limit: 50,
+           total_pages: 17
+       }
+    ------------------------------------- */
 
     const logs =
         Array.isArray(data)
             ? data
             : (data.logs || []);
 
+    const total =
+        Array.isArray(data)
+            ? logs.length
+            : Number(data.total || 0);
+
+    const totalPages =
+        Array.isArray(data)
+            ? 1
+            : Number(data.total_pages || 1);
+
+    currentLogsPage =
+        Number(data.page || page);
 
     /* -------------------------------------
        No logs
@@ -1402,7 +1619,7 @@ async function loadLogs(page = 1) {
             <tr>
 
                 <td
-                    colspan="9"
+                    colspan="10"
                     style="
                         text-align: center;
                         padding: 30px;
@@ -1416,12 +1633,17 @@ async function loadLogs(page = 1) {
 
         `;
 
+        renderLogsPagination(
+            totalPages,
+            currentLogsPage,
+            total
+        );
+
         return;
     }
 
-
     /* -------------------------------------
-       Render every log
+       Render logs
     ------------------------------------- */
 
     logs.forEach(log => {
@@ -1429,18 +1651,14 @@ async function loadLogs(page = 1) {
         const vehicleNumber =
             log.vehicle_number || '-';
 
-
         const vehicleType =
             log.vehicle_type || '-';
-
 
         const slot =
             log.slot_id || '-';
 
-
         const floor =
             log.floor || '-';
-
 
         const entryTime =
             log.entry_time
@@ -1449,7 +1667,6 @@ async function loadLogs(page = 1) {
                 )
                 : '-';
 
-
         const exitTime =
             log.exit_time
                 ? formatTime(
@@ -1457,9 +1674,7 @@ async function loadLogs(page = 1) {
                 )
                 : '-';
 
-
         let duration = '-';
-
 
         if (
             log.duration !== undefined &&
@@ -1478,7 +1693,6 @@ async function loadLogs(page = 1) {
                 `${log.duration_minutes} mins`;
         }
 
-
         const fee =
             Number(
                 log.fee || 0
@@ -1486,10 +1700,8 @@ async function loadLogs(page = 1) {
                 'en-IN'
             );
 
-
         const status =
             log.status || 'occupied';
-
 
         tbody.innerHTML += `
 
@@ -1499,41 +1711,33 @@ async function loadLogs(page = 1) {
                     ${vehicleNumber}
                 </td>
 
-
                 <td>
                     ${vehicleType}
                 </td>
-
 
                 <td>
                     ${slot}
                 </td>
 
-
                 <td>
                     ${floor}
                 </td>
-
 
                 <td>
                     ${entryTime}
                 </td>
 
-
                 <td>
                     ${exitTime}
                 </td>
-
 
                 <td>
                     ${duration}
                 </td>
 
-
                 <td>
                     ₹${fee}
                 </td>
-
 
                 <td>
 
@@ -1545,31 +1749,160 @@ async function loadLogs(page = 1) {
 
                 </td>
 
-                <td> 
+                <td>
 
                     <button
-                    
                         type="button"
                         class="delete-log-btn"
                         onclick="deleteLog('${log.id}')"
                     >
                         Delete
+                    </button>
 
-                    </button> 
-
-                </td> 
+                </td>
 
             </tr>
 
         `;
     });
 
-
     console.log(
-        `Loaded ${logs.length} parking logs`
+        `Loaded ${logs.length} parking logs — Page ${currentLogsPage} of ${totalPages}`
+    );
+
+    /* -------------------------------------
+       Render pagination
+    ------------------------------------- */
+
+    renderLogsPagination(
+        totalPages,
+        currentLogsPage,
+        total
     );
 }
 
+/* =========================================
+   PARKING LOG PAGINATION
+========================================= */
+
+function renderLogsPagination(
+    totalPages,
+    currentPage,
+    totalRecords
+) {
+
+    const container =
+        document.getElementById(
+            'logsPagination'
+        );
+
+    if (!container) {
+        console.warn(
+            'logsPagination element not found'
+        );
+        return;
+    }
+
+    /* No pagination needed */
+
+    if (
+        !totalPages ||
+        totalPages <= 1
+    ) {
+
+        container.innerHTML = '';
+
+        return;
+    }
+
+    let html = '';
+
+    const startRecord =
+        ((currentPage - 1) * PER_PAGE) + 1;
+
+    const endRecord =
+        Math.min(
+            currentPage * PER_PAGE,
+            totalRecords
+        );
+
+    /* -------------------------------------
+       Record information
+    ------------------------------------- */
+
+    html += `
+
+        <div class="logs-pagination-info">
+
+            Showing
+            ${startRecord}–${endRecord}
+            of
+            ${totalRecords}
+            records
+
+        </div>
+
+    `;
+
+    /* -------------------------------------
+       Previous button
+    ------------------------------------- */
+
+    html += `
+
+        <button
+            type="button"
+            ${currentPage === 1 ? 'disabled' : ''}
+            onclick="loadLogs(${currentPage - 1})"
+            aria-label="Previous page"
+        >
+            ‹
+        </button>
+
+    `;
+
+    /* -------------------------------------
+       Page numbers
+    ------------------------------------- */
+
+    for (
+        let i = 1;
+        i <= totalPages;
+        i++
+    ) {
+
+        html += `
+
+            <button
+                type="button"
+                class="${i === currentPage ? 'active' : ''}"
+                onclick="loadLogs(${i})"
+            >
+                ${i}
+            </button>
+
+        `;
+    }
+
+    /* -------------------------------------
+       Next button
+    ------------------------------------- */
+
+    html += `
+
+        <button
+            type="button"
+            ${currentPage === totalPages ? 'disabled' : ''}
+            onclick="loadLogs(${currentPage + 1})"
+            aria-label="Next page"
+        >
+            ›
+        </button>
+
+    `;
+
+    container.innerHTML = html;
+}
 
 async function deleteLog(logId) {
 
@@ -1775,6 +2108,8 @@ socket.onerror = () => {
 
 
 socket.onmessage =
+
+
     async (event) => {
 
         try {
@@ -1870,24 +2205,19 @@ if (dateBox) {
 ========================================= */
 
 document
-    .getElementById(
-        'floorFilter'
-    )
+    .getElementById('floorFilter')
     ?.addEventListener(
         'change',
-        renderSlots
+        () => renderSlots(1)
     );
 
 
 document
-    .getElementById(
-        'statusFilter'
-    )
+    .getElementById('statusFilter')
     ?.addEventListener(
         'change',
-        renderSlots
+        () => renderSlots(1)
     );
-
 
 /* =========================================
    REVENUE FILTER
