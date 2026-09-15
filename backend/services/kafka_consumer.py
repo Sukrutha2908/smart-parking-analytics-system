@@ -11,7 +11,7 @@ from backend.app.mongodb import (
     slot_collection,
     parking_collection,
     log_collection,
-    billing_collection
+    billing_col
 )
 
 
