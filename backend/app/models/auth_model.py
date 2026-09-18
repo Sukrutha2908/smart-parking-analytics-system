@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, EmailStr, field_validator
 class UserRegister(BaseModel):
 
     full_name: str = Field(
-        min_length=2,
+        min_length=4,
         max_length=100
     )
 
