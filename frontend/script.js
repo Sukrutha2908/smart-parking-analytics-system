@@ -105,7 +105,7 @@ function showWelcomePopup() {
 
             popup.classList.add('show');
 
-        }, 60);
+        }, 50);
 
 
         setTimeout(() => {
