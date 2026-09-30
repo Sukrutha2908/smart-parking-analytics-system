@@ -1265,6 +1265,20 @@ async function registerEntry() {
         return;
     }
 
+    // Validate Indian vehicle number format
+    const vehiclePattern =
+        /^[A-Z]{2}[0-9]{2}[A-Z]{1,3}[0-9]{4}$/;
+
+    if (!vehiclePattern.test(vehicleNumber)) {
+
+        alert(
+            'Invalid vehicle number. Please enter a valid number like AP23TR2345',
+            'error'
+        );
+
+        return;
+    }
+
 
     try {
 

@@ -95,8 +95,11 @@ while True:
 
         if current_status == "free":
 
+            letters = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + \
+                random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
             vehicle_number = (
-                f"AP39{random.randint(1000, 9999)}"
+                f"AP23{letters}{random.randint(1000, 9999):04d}"
             )
 
             vehicle_type = FLOOR_VEHICLE_TYPE.get(
