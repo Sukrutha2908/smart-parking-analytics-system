@@ -52,16 +52,15 @@
         body {
 
             font-family:
-                "Segoe UI",
                 Arial,
                 sans-serif;
 
             background:
                 linear-gradient(
                     135deg,
-                    #eef4ff 0%,
-                    #f8fafc 50%,
-                    #eefaf8 100%
+                    #0f172a 0%,
+                    #172554 55%,
+                    #1d4ed8 100%
                 );
 
             color: #172033;
@@ -1367,6 +1366,8 @@
                                 required
                                 minlength="2"
                                 maxlength="100"
+                                pattern="[A-Za-z]+([ '-][A-Za-z]+)*"
+                                title="Full name should contain only letters, spaces, hyphens, or apostrophes."
                                 autocomplete="name"
                             >
 
@@ -1414,6 +1415,8 @@
                                     required
                                     minlength="3"
                                     maxlength="50"
+                                    pattern="[A-Za-z0-9]+([._][A-Za-z0-9]+)*"
+                                    title="Username can contain letters, numbers, dots, and underscores only."
                                     autocomplete="username"
                                 >
 
@@ -1974,8 +1977,11 @@
 
 
                     /* -----------------------------------------
-                       BASIC VALIDATION
+                    FULL NAME VALIDATION
                     ----------------------------------------- */
+
+                    const fullNamePattern =
+                        /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/;
 
                     if (!fullName) {
 
@@ -1986,6 +1992,22 @@
                         return;
                     }
 
+                    if (!fullNamePattern.test(fullName)) {
+
+                        showMessage(
+                            "Full name can contain only letters, spaces, hyphens, or apostrophes."
+                        );
+
+                        return;
+                    }
+
+
+                    /* -----------------------------------------
+                    USERNAME VALIDATION
+                    ----------------------------------------- */
+
+                    const usernamePattern =
+                        /^[A-Za-z0-9]+(?:[._][A-Za-z0-9]+)*$/;
 
                     if (!username) {
 
@@ -1996,6 +2018,14 @@
                         return;
                     }
 
+                    if (!usernamePattern.test(username)) {
+
+                        showMessage(
+                            "Username can contain only letters, numbers, dots, and underscores. No spaces or special characters."
+                        );
+
+                        return;
+                    }
 
                     if (!email) {
 

@@ -148,6 +148,83 @@ const PER_PAGE = 50;
 let currentLogsPage = 1;
 let currentSlotsPage = 1;
 
+/* =========================================
+   TOAST NOTIFICATIONS
+========================================= */
+
+function showToast(message, type = 'info', duration = 3000) {
+
+    let container =
+        document.getElementById('toastContainer');
+
+    // Create container if it doesn't exist
+    if (!container) {
+
+        container =
+            document.createElement('div');
+
+        container.id = 'toastContainer';
+
+        container.className =
+            'toast-container';
+
+        document.body.appendChild(container);
+    }
+
+
+    const toast =
+        document.createElement('div');
+
+    toast.className =
+        `toast ${type}`;
+
+
+    let icon = 'ℹ';
+
+    if (type === 'success') {
+        icon = '✓';
+    }
+
+    if (type === 'error') {
+        icon = '✕';
+    }
+
+    if (type === 'warning') {
+        icon = '⚠';
+    }
+
+
+    toast.innerHTML = `
+        <span class="toast-icon">
+            ${icon}
+        </span>
+
+        <span class="toast-message">
+            ${message}
+        </span>
+    `;
+
+
+    container.appendChild(toast);
+
+
+    // Show
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+
+
+    // Remove
+    setTimeout(() => {
+
+        toast.classList.remove('show');
+
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+
+    }, duration);
+}
 
 /* =========================================
    NAVIGATION
@@ -709,9 +786,7 @@ function renderSlotsPagination(
    REVENUE CHART
 ========================================= */
 
-async function loadRevenueChart(
-    filter = 'current'
-) {
+async function loadRevenueChart(filter = 'current') {
 
     try {
 
@@ -720,45 +795,39 @@ async function loadRevenueChart(
                 `/analytics/revenue?filter=${filter}`
             );
 
-
         if (!ok || !data) {
-
             console.error(
                 'Revenue API failed:',
                 data
             );
-
             return;
         }
 
+        console.log(
+            'Revenue:',
+            filter,
+            data
+        );
 
-        const labels =
-            data.labels || [];
-
-        const values =
-            data.values || [];
-
+        const labels = data.labels || [];
+        const values = data.values || [];
 
         const canvas =
-            document.getElementById(
-                'revenueChart'
+            document.getElementById('revenueChart');
+
+        if (!canvas) {
+            console.error(
+                'revenueChart canvas not found'
             );
-
-
-        if (!canvas) return;
-
+            return;
+        }
 
         const ctx =
             canvas.getContext('2d');
 
-
-        if (
-            window.revenueChartInstance
-        ) {
-
+        if (window.revenueChartInstance) {
             window.revenueChartInstance.destroy();
         }
-
 
         window.revenueChartInstance =
             new Chart(ctx, {
@@ -766,11 +835,9 @@ async function loadRevenueChart(
                 type: 'line',
 
                 data: {
-
                     labels: labels,
 
                     datasets: [{
-
                         label: 'Revenue',
 
                         data: values,
@@ -798,12 +865,13 @@ async function loadRevenueChart(
                     }]
                 },
 
-
                 options: {
 
                     responsive: true,
 
                     maintainAspectRatio: false,
+
+                    animation: false,
 
                     plugins: {
 
@@ -820,7 +888,7 @@ async function loadRevenueChart(
 
                                         return ' ₹' +
                                             Number(
-                                                context.raw
+                                                context.raw || 0
                                             ).toLocaleString(
                                                 'en-IN'
                                             );
@@ -828,7 +896,6 @@ async function loadRevenueChart(
                             }
                         }
                     },
-
 
                     scales: {
 
@@ -842,15 +909,13 @@ async function loadRevenueChart(
                                     function(value) {
 
                                         return '₹' +
-                                            Number(
-                                                value
-                                            ).toLocaleString(
-                                                'en-IN'
-                                            );
+                                            Number(value)
+                                                .toLocaleString(
+                                                    'en-IN'
+                                                );
                                     }
                             }
                         },
-
 
                         x: {
 
@@ -862,7 +927,6 @@ async function loadRevenueChart(
                 }
             });
 
-
     } catch (error) {
 
         console.error(
@@ -871,7 +935,6 @@ async function loadRevenueChart(
         );
     }
 }
-
 
 /* =========================================
    FLOOR OCCUPANCY
@@ -1257,7 +1320,7 @@ async function registerEntry() {
         !vehicleType
     ) {
 
-        alert(
+        showToast(
             'Enter vehicle number and select vehicle type',
             'error'
         );
@@ -1266,13 +1329,26 @@ async function registerEntry() {
     }
 
     // Validate Indian vehicle number format
+    const indianStateCodes = [
+        "AP", "AR", "AS", "BR", "CG",
+        "GA", "GJ", "HR", "HP", "JH",
+        "KA", "KL", "MP", "MH", "MN",
+        "ML", "MZ", "NL", "OD", "PB",
+        "RJ", "SK", "TN", "TS", "TR",
+        "UK", "UP", "WB",
+        "AN", "CH", "DL", "JK", "LA",
+        "LD", "PY", "DD", "DN"
+    ];
+
     const vehiclePattern =
-        /^[A-Z]{2}[0-9]{2}[A-Z]{1,3}[0-9]{4}$/;
+        /^([A-Z]{2})([0-9]{2})([A-Z]{1,3})([0-9]{4})$/;
 
-    if (!vehiclePattern.test(vehicleNumber)) {
+    const match = vehicleNumber.match(vehiclePattern);
 
-        alert(
-            'Invalid vehicle number. Please enter a valid number like AP23TR2345',
+    if (!match || !indianStateCodes.includes(match[1])) {
+
+        showToast(
+            'Invalid vehicle number. Please enter a valid Indian registration number, e.g. AP23TR2345',
             'error'
         );
 
@@ -1303,7 +1379,7 @@ async function registerEntry() {
 
         if (!ok) {
 
-            alert(
+            showToast(
                 data?.error ||
                 data?.detail ||
                 'Entry failed',
@@ -1314,9 +1390,13 @@ async function registerEntry() {
         }
 
 
-        alert(
-            `Vehicle registered — slot ${data.slot_allocated} assigned`
+        showToast(
+            `Vehicle registered — slot ${data.slot_allocated} assigned`,
+            'success'
         );
+
+        document.getElementById('vehicleNum').value = '';
+        document.getElementById('vehicleType').value = '';
 
 
         document.getElementById(
@@ -1340,7 +1420,7 @@ async function registerEntry() {
 
         console.error(error);
 
-        alert(
+        showToast(
             'Entry failed',
             'error'
         );
@@ -1365,7 +1445,7 @@ async function processExit() {
 
     if (!vehicleNumber) {
 
-        alert(
+        showToast(
             'Enter vehicle number',
             'error'
         );
@@ -1392,7 +1472,7 @@ async function processExit() {
 
     if (!ok) {
 
-        alert(
+        showToast(
             data?.detail ||
             'Error processing exit',
             'error'
@@ -1401,11 +1481,14 @@ async function processExit() {
         return;
     }
 
+    window.lastReceiptData = data;
 
-    alert(
-        data.message
+    showToast(
+        data.message,
+        'success'
     );
 
+    document.getElementById('exitVehicleNum').value = '';
 
     document.getElementById(
         'billingResult'
@@ -1516,6 +1599,27 @@ async function processExit() {
 
             </div>
 
+            <div class="receipt-actions">
+
+                <button
+                    type="button"
+                    class="download-receipt-btn"
+                    onclick="downloadReceiptPDF()"
+                    onclick="clearBillingReceipt()"
+                >
+                    Download Receipt PDF
+                </button>
+
+                <button
+                    type="button"
+                    class="clear-receipt-btn"
+                    onclick="clearBillingReceipt()"
+                >
+                    Clear
+                </button>
+
+            </div>
+
         </div>
     `;
 
@@ -1527,6 +1631,248 @@ async function processExit() {
     await loadLogs(1);
 }
 
+/* =========================================
+   DOWNLOAD RECEIPT AS PDF
+========================================= */
+
+function downloadReceiptPDF() {
+
+    if (!window.lastReceiptData) {
+
+        showToast(
+            'No billing receipt available',
+            'warning'
+        );
+
+        return;
+    }
+
+    if (!window.jspdf) {
+
+        showToast(
+            'PDF library not loaded',
+            'error'
+        );
+
+        return;
+    }
+
+    const data = window.lastReceiptData;
+
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF();
+
+
+    // ================================
+    // HEADER
+    // ================================
+
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+
+    doc.text(
+        'SMART PARKING ANALYTICS',
+        105,
+        20,
+        { align: 'center' }
+    );
+
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+
+    doc.text(
+        'Parking Billing Receipt',
+        105,
+        30,
+        { align: 'center' }
+    );
+
+
+    doc.line(20, 38, 190, 38);
+
+
+    // ================================
+    // DETAILS
+    // ================================
+
+    let y = 55;
+
+    doc.setFontSize(11);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Billing ID:', 25, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+        String(data.billing_id || '-'),
+        75,
+        y
+    );
+
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Vehicle Number:', 25, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+        String(data.vehicle_number || '-'),
+        75,
+        y
+    );
+
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Slot:', 25, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+        `${data.slot_id || '-'} · ${data.floor || '-'}`,
+        75,
+        y
+    );
+
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Entry Time:', 25, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+        formatTime(data.entry_time),
+        75,
+        y
+    );
+
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Exit Time:', 25, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+        formatTime(data.exit_time),
+        75,
+        y
+    );
+
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Duration:', 25, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+        `${data.duration_minutes || 0} minutes`,
+        75,
+        y
+    );
+
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Rate:', 25, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+        `Rs.${data.rate_per_hour || 0}/hour`,
+        75,
+        y
+    );
+
+
+    // ================================
+    // TOTAL
+    // ================================
+
+    y += 18;
+
+    doc.line(
+        20,
+        y - 6,
+        190,
+        y - 6
+    );
+
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+
+    doc.text(
+        'TOTAL FEE:',
+        25,
+        y
+    );
+
+    doc.text(
+        `Rs.${data.fee || 0}`,
+        165,
+        y
+    );
+
+
+    // ================================
+    // FOOTER
+    // ================================
+
+    y += 25;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+
+    doc.text(
+        'Thank you for using Smart Parking Analytics.',
+        105,
+        y,
+        { align: 'center' }
+    );
+
+
+    // ================================
+    // DOWNLOAD
+    // ================================
+
+    const vehicle =
+        String(
+            data.vehicle_number ||
+            'vehicle'
+        );
+
+    doc.save(
+        `Parking_Receipt_${vehicle}.pdf`
+    );
+
+
+    showToast(
+        'Receipt downloaded successfully',
+        'success'
+    );
+}
+
+
+/* =========================================
+   CLEAR BILLING RECEIPT
+========================================= */
+
+function clearBillingReceipt() {
+
+    document.getElementById(
+        'billingResult'
+    ).innerHTML = '';
+
+    document.getElementById(
+        'exitVehicleNum'
+    ).value = '';
+
+    window.lastReceiptData = null;
+
+    showToast(
+        'Billing receipt cleared',
+        'success'
+    );
+}
 
 /* =========================================
    LOAD PARKING LOGS
@@ -1575,8 +1921,9 @@ async function loadLogs(page = 1) {
 
     if (!ok || !data) {
 
-        alert(
-            'Unable to load parking logs'
+        showToast(
+            'Unable to load parking logs',
+            'error'
         );
 
         return;
@@ -1924,8 +2271,9 @@ async function deleteLog(logId) {
 
     if (!logId || logId === "undefined") {
 
-        alert(
-            "Invalid parking log ID"
+        showToast(
+            "Invalid parking log ID",
+            'error'
         );
 
         console.error(
@@ -1973,16 +2321,18 @@ async function deleteLog(logId) {
 
         if (!response.ok) {
 
-            alert(
+            showToast(
                 data.detail ||
-                "Unable to delete parking log"
+                "Unable to delete parking log",
+                'error'
             );
 
             return;
         }
 
-        alert(
-            "Parking log deleted successfully"
+        showToast(
+            "Parking log deleted successfully",
+            'success'
         );
 
         // Reload logs
@@ -2001,8 +2351,9 @@ async function deleteLog(logId) {
             error
         );
 
-        alert(
-            "Unable to delete parking log"
+        showToast(
+            "Unable to delete parking log",
+            'error'
         );
     }
 }

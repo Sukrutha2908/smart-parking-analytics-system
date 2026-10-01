@@ -54,10 +54,6 @@ def _week_labels():
 def _get_date_range(filter_name: str):
     """
     Returns a UTC date range for the requested revenue filter.
-
-    The application stores billing_time as a MongoDB datetime.
-    This uses the current server date while grouping/displaying
-    in Asia/Kolkata elsewhere.
     """
 
     now = datetime.now(timezone.utc)
@@ -68,30 +64,57 @@ def _get_date_range(filter_name: str):
     monday = today - timedelta(days=today.weekday())
 
     if filter_name == "last":
+
+        # Previous week
         start_date = monday - timedelta(days=7)
         end_date = monday
 
     elif filter_name == "month":
+
+        # Current calendar month
         start_date = today.replace(day=1)
 
         if start_date.month == 12:
-            next_month = start_date.replace(
+            end_date = start_date.replace(
                 year=start_date.year + 1,
                 month=1,
-                day=1,
+                day=1
             )
         else:
-            next_month = start_date.replace(
+            end_date = start_date.replace(
                 month=start_date.month + 1,
-                day=1,
+                day=1
             )
 
-        end_date = next_month
+    elif filter_name == "previous_month":
+
+        # Previous calendar month
+        current_month_start = today.replace(day=1)
+
+        end_date = current_month_start
+
+        if current_month_start.month == 1:
+            start_date = current_month_start.replace(
+                year=current_month_start.year - 1,
+                month=12,
+                day=1
+            )
+        else:
+            start_date = current_month_start.replace(
+                month=current_month_start.month - 1,
+                day=1
+            )
 
     else:
-        # current week
+
+        # Current week
         start_date = monday
         end_date = monday + timedelta(days=7)
+
+    # -------------------------------------------------
+    # Convert date range to UTC datetime
+    # IMPORTANT: this must be OUTSIDE all if/elif blocks
+    # -------------------------------------------------
 
     start_dt = datetime.combine(
         start_date,
@@ -106,8 +129,6 @@ def _get_date_range(filter_name: str):
     )
 
     return start_dt, end_dt
-
-
 # =========================================================
 # OCCUPANCY
 # =========================================================
@@ -182,9 +203,9 @@ def revenue(filter: str = "current"):
             "current",
             "last",
             "month",
+            "previous_month",
         }:
             filter = "current"
-
 
         # -----------------------------------------------
         # Get exact date range
@@ -218,19 +239,28 @@ def revenue(filter: str = "current"):
 
                 {
                     "$group": {
-
                         "_id": {
                             "$dayOfWeek": {
-
-                                "date": "$billing_time",
-
-                                "timezone":
-                                    "Asia/Kolkata",
+                                "date": {
+                                    "$convert": {
+                                        "input": "$billing_time",
+                                        "to": "date",
+                                        "onError": None,
+                                        "onNull": None,
+                                    }
+                                },
+                                "timezone": "Asia/Kolkata",
                             }
                         },
-
                         "total_revenue": {
-                            "$sum": "$amount",
+                            "$sum": {
+                                "$convert": {
+                                    "input": "$amount",
+                                    "to": "double",
+                                    "onError": 0,
+                                    "onNull": 0,
+                                }
+                            }
                         },
                     }
                 },
@@ -327,7 +357,14 @@ def revenue(filter: str = "current"):
                     },
 
                     "total_revenue": {
-                        "$sum": "$amount",
+                        "$sum": {
+                            "$convert": {
+                                "input": "$amount",
+                                "to": "double",
+                                "onError": 0,
+                                "onNull": 0,
+                            }
+                        }
                     },
                 }
             },
@@ -471,7 +508,14 @@ def weekly_revenue(filter: str = "current"):
                         }
                     },
                     "total_revenue": {
-                        "$sum": "$amount",
+                        "$sum": {
+                            "$convert": {
+                                "input": "$amount",
+                                "to": "double",
+                                "onError": 0,
+                                "onNull": 0,
+                            }
+                        }
                     },
                 }
             },

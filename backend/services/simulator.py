@@ -98,8 +98,55 @@ while True:
             letters = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + \
                 random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+            INDIAN_STATE_CODES = [
+                "AP",  # Andhra Pradesh
+                "AR",  # Arunachal Pradesh
+                "AS",  # Assam
+                "BR",  # Bihar
+                "CG",  # Chhattisgarh
+                "GA",  # Goa
+                "GJ",  # Gujarat
+                "HR",  # Haryana
+                "HP",  # Himachal Pradesh
+                "JH",  # Jharkhand
+                "KA",  # Karnataka
+                "KL",  # Kerala
+                "MP",  # Madhya Pradesh
+                "MH",  # Maharashtra
+                "MN",  # Manipur
+                "ML",  # Meghalaya
+                "MZ",  # Mizoram
+                "NL",  # Nagaland
+                "OD",  # Odisha
+                "PB",  # Punjab
+                "RJ",  # Rajasthan
+                "SK",  # Sikkim
+                "TN",  # Tamil Nadu
+                "TS",  # Telangana
+                "TR",  # Tripura
+                "UK",  # Uttarakhand
+                "UP",  # Uttar Pradesh
+                "WB",  # West Bengal
+                "DL",  # Delhi
+                "JK",  # Jammu and Kashmir
+                "LA",  # Ladakh
+                "CH",  # Chandigarh
+                "PY",  # Puducherry
+            ]
+
+            state_code = random.choice(INDIAN_STATE_CODES)
+
+            rto_code = random.randint(1, 99)
+
+            letters = (
+                random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") +
+                random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+            )
+
             vehicle_number = (
-                f"AP23{letters}{random.randint(1000, 9999):04d}"
+                f"{state_code}{rto_code:02d}"
+                f"{letters}"
+                f"{random.randint(1, 9999):04d}"
             )
 
             vehicle_type = FLOOR_VEHICLE_TYPE.get(
