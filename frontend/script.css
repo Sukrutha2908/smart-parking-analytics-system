@@ -2376,3 +2376,83 @@ body {
 .slot {
     cursor: pointer;
 }
+
+/* =========================================
+   BILLING RECEIPT ACTION BUTTONS
+========================================= */
+
+.receipt-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Download PDF button */
+.download-receipt-btn {
+    border: none;
+    background: #2563eb;
+    color: #ffffff;
+    padding: 11px 18px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.18);
+}
+
+.download-receipt-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(37, 99, 235, 0.25);
+}
+
+.download-receipt-btn:active {
+    transform: translateY(0);
+}
+
+
+/* Clear button */
+.clear-receipt-btn {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #475569;
+    padding: 10px 17px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clear-receipt-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.clear-receipt-btn:active {
+    transform: translateY(0);
+}
+
+
+/* Mobile */
+@media (max-width: 600px) {
+
+    .receipt-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .download-receipt-btn,
+    .clear-receipt-btn {
+        width: 100%;
+    }
+}
