@@ -139,7 +139,7 @@ if (accessToken) {
    API
 ========================================= */
 
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = window.location.origin;
 
 let allSlots = [];
 
@@ -2736,32 +2736,20 @@ function formatTime(time) {
     );
 }
 
-/* =========================================
-   WEBSOCKET
-========================================= */
-
 const connStatusEl =
-    document.getElementById(
-        'connStatus'
-    );
-
+    document.getElementById('connStatus');
 
 const connStatusLabel =
-    document.getElementById(
-        'connStatusLabel'
-    );
-
+    document.getElementById('connStatusLabel');
 
 function setConnStatus(live) {
 
     if (!connStatusEl) return;
 
-
     connStatusEl.classList.toggle(
         'live',
         live
     );
-
 
     if (connStatusLabel) {
 
@@ -2772,93 +2760,242 @@ function setConnStatus(live) {
     }
 }
 
+/* -----------------------------------------
+   WEBSOCKET URL
+----------------------------------------- */
 
-const socket =
-    new WebSocket(
-        'ws://127.0.0.1:8000/ws'
+const WS_PROTOCOL =
+    window.location.protocol === 'https:'
+        ? 'wss:'
+        : 'ws:';
+
+const WS_URL =
+    `${WS_PROTOCOL}//${window.location.host}/ws`;
+
+
+/* -----------------------------------------
+   SOCKET VARIABLES
+----------------------------------------- */
+
+let socket = null;
+
+let reconnectTimer = null;
+
+let reconnectAttempts = 0;
+
+
+/* -----------------------------------------
+   CONNECT WEBSOCKET
+----------------------------------------- */
+
+function connectWebSocket() {
+
+    /* Prevent duplicate connections */
+
+    if (
+        socket &&
+        (
+            socket.readyState === WebSocket.OPEN ||
+            socket.readyState === WebSocket.CONNECTING
+        )
+    ) {
+        return;
+    }
+
+
+    console.log(
+        'Connecting to WebSocket...'
     );
 
 
-socket.onopen = () => {
-
-    setConnStatus(true);
-};
+    socket =
+        new WebSocket(WS_URL);
 
 
-socket.onclose = () => {
+    /* -------------------------------------
+       CONNECTION OPENED
+    ------------------------------------- */
 
-    setConnStatus(false);
-};
+    socket.onopen = () => {
 
+        console.log(
+            'WebSocket connected'
+        );
 
-socket.onerror = () => {
+        reconnectAttempts = 0;
 
-    setConnStatus(false);
-};
-
-
-socket.onmessage =
-
-
-    async (event) => {
-
-        try {
-
-            const data =
-                JSON.parse(
-                    event.data
-                );
-
-
-            const slotCard =
-                document.querySelector(
-                    `[data-slot-id="${data.slot_id}"]`
-                );
-
-
-            if (slotCard) {
-
-                slotCard.classList.remove(
-                    'free',
-                    'occupied'
-                );
-
-
-                slotCard.classList.add(
-                    data.status
-                );
-
-
-                slotCard.innerHTML = `
-
-                    <h3>
-                        ${data.slot_id}
-                    </h3>
-
-                    <p>
-                        ${data.status}
-                    </p>
-
-                `;
-            }
-
-
-            await loadSummary();
-
-            await loadFloorOccupancy();
-
-            await loadVehicleDistribution();
-
-
-        } catch (error) {
-
-            console.error(
-                'WebSocket message error:',
-                error
-            );
-        }
+        setConnStatus(true);
     };
 
+
+    /* -------------------------------------
+       MESSAGE RECEIVED
+    ------------------------------------- */
+
+    socket.onmessage =
+        async (event) => {
+
+            try {
+
+                const data =
+                    JSON.parse(
+                        event.data
+                    );
+
+
+                console.log(
+                    'WebSocket update:',
+                    data
+                );
+
+
+                /* Update slot card */
+
+                const slotCard =
+                    document.querySelector(
+                        `[data-slot-id="${data.slot_id}"]`
+                    );
+
+
+                if (slotCard) {
+
+                    slotCard.classList.remove(
+                        'free',
+                        'occupied'
+                    );
+
+
+                    slotCard.classList.add(
+                        data.status
+                    );
+
+
+                    slotCard.innerHTML = `
+                        <h3>
+                            ${data.slot_id}
+                        </h3>
+
+                        <p>
+                            ${data.status}
+                        </p>
+                    `;
+                }
+
+
+                /* Refresh complete slot data */
+
+                await loadSlots();
+
+
+                /* Refresh dashboard */
+
+                await loadSummary();
+
+                await loadFloorOccupancy();
+
+                await loadVehicleDistribution();
+
+
+            } catch (error) {
+
+                console.error(
+                    'WebSocket message error:',
+                    error
+                );
+            }
+        };
+
+
+    /* -------------------------------------
+       CONNECTION CLOSED
+    ------------------------------------- */
+
+    socket.onclose = () => {
+
+        console.warn(
+            'WebSocket disconnected'
+        );
+
+        setConnStatus(false);
+
+        scheduleReconnect();
+    };
+
+
+    /* -------------------------------------
+       CONNECTION ERROR
+    ------------------------------------- */
+
+    socket.onerror = (error) => {
+
+        console.error(
+            'WebSocket error:',
+            error
+        );
+
+        setConnStatus(false);
+
+        /*
+         * onclose will normally fire
+         * after onerror, so reconnecting
+         * is handled there.
+         */
+    };
+}
+
+
+/* -----------------------------------------
+   RECONNECT
+----------------------------------------- */
+
+function scheduleReconnect() {
+
+    if (reconnectTimer) {
+        return;
+    }
+
+
+    reconnectAttempts++;
+
+
+    /*
+     * Increasing delay:
+     *
+     * 1st attempt  -> 2 sec
+     * 2nd attempt  -> 4 sec
+     * 3rd attempt  -> 6 sec
+     * ...
+     * Maximum     -> 10 sec
+     */
+
+    const delay =
+        Math.min(
+            reconnectAttempts * 2000,
+            10000
+        );
+
+
+    console.log(
+        `Reconnecting WebSocket in ${delay / 1000} seconds...`
+    );
+
+
+    reconnectTimer =
+        setTimeout(() => {
+
+            reconnectTimer = null;
+
+            connectWebSocket();
+
+        }, delay);
+}
+
+
+/* -----------------------------------------
+   START WEBSOCKET
+----------------------------------------- */
+
+connectWebSocket();
 
 /* =========================================
    CURRENT DATE
