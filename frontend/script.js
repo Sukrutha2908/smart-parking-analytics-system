@@ -507,14 +507,10 @@ function renderSlots(page = 1) {
     grid.innerHTML = '';
 
     const floorFilter =
-        document.getElementById(
-            'floorFilter'
-        )?.value || 'all';
+        document.getElementById('floorFilter')?.value || 'all';
 
     const statusFilter =
-        document.getElementById(
-            'statusFilter'
-        )?.value || 'all';
+        document.getElementById('statusFilter')?.value || 'all';
 
 
     /* -------------------------------------
@@ -524,6 +520,7 @@ function renderSlots(page = 1) {
     let filteredSlots = [...allSlots];
 
 
+    // Floor filter
     if (
         floorFilter &&
         floorFilter !== 'all'
@@ -537,6 +534,7 @@ function renderSlots(page = 1) {
     }
 
 
+    // Status filter
     if (
         statusFilter &&
         statusFilter !== 'all'
@@ -563,6 +561,8 @@ function renderSlots(page = 1) {
         );
 
 
+    // If current page is greater than
+    // available pages, move to last page
     if (
         page > totalPages &&
         totalPages > 0
@@ -657,6 +657,331 @@ function renderSlots(page = 1) {
     );
 }
 
+
+/* =========================================
+   SLOT DETAILS MODAL
+========================================= */
+
+async function openSlotDetails(slotId) {
+
+    const slot = allSlots.find(
+        s => s.slot_id === slotId
+    );
+
+    if (!slot) return;
+
+
+    const modal =
+        document.getElementById('slotDetailsModal');
+
+    const title =
+        document.getElementById('slotDetailsTitle');
+
+    const content =
+        document.getElementById('slotDetailsContent');
+
+
+    if (!modal || !title || !content) return;
+
+
+    title.textContent =
+        `Slot ${slot.slot_id}`;
+
+
+    /* -------------------------------------
+       FREE SLOT
+    ------------------------------------- */
+
+    if (slot.status !== 'occupied') {
+
+        content.innerHTML = `
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Slot
+                </span>
+
+                <span class="slot-detail-value">
+                    ${slot.slot_id}
+                </span>
+
+            </div>
+
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Floor
+                </span>
+
+                <span class="slot-detail-value">
+                    ${slot.floor || '-'}
+                </span>
+
+            </div>
+
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Status
+                </span>
+
+                <span class="slot-detail-value">
+
+                    <span class="slot-status free">
+                        Free
+                    </span>
+
+                </span>
+
+            </div>
+
+
+            <div
+                style="
+                    text-align:center;
+                    padding:20px 0 5px;
+                    color:#64748b;
+                "
+            >
+                No vehicle is currently parked.
+            </div>
+
+        `;
+
+        modal.classList.add('show');
+
+        return;
+    }
+
+
+    /* -------------------------------------
+       SHOW LOADING
+    ------------------------------------- */
+
+    content.innerHTML = `
+
+        <div
+            style="
+                text-align:center;
+                padding:30px;
+                color:#64748b;
+            "
+        >
+            Loading slot details...
+        </div>
+
+    `;
+
+    modal.classList.add('show');
+
+
+    /* -------------------------------------
+       GET ACTIVE PARKING LOG
+    ------------------------------------- */
+
+    try {
+
+        const { ok, data } =
+            await api(
+                `/logs?vehicle_number=${encodeURIComponent(
+                    slot.vehicle_number || ''
+                )}&status=occupied`
+            );
+
+
+        let activeLog = null;
+
+
+        if (ok && data) {
+
+            const logs =
+                Array.isArray(data)
+                    ? data
+                    : (data.logs || []);
+
+
+            activeLog =
+                logs.find(
+                    log =>
+                        log.slot_id === slot.slot_id &&
+                        log.status === 'occupied'
+                );
+        }
+
+
+        const entryTime =
+            activeLog?.entry_time
+                ? formatTime(activeLog.entry_time)
+                : '-';
+
+
+        /* -------------------------------------
+           SHOW OCCUPIED SLOT DETAILS
+        ------------------------------------- */
+
+        content.innerHTML = `
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Slot
+                </span>
+
+                <span class="slot-detail-value">
+                    ${slot.slot_id}
+                </span>
+
+            </div>
+
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Floor
+                </span>
+
+                <span class="slot-detail-value">
+                    ${slot.floor || '-'}
+                </span>
+
+            </div>
+
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Status
+                </span>
+
+                <span class="slot-detail-value">
+
+                    <span class="slot-status occupied">
+                        Occupied
+                    </span>
+
+                </span>
+
+            </div>
+
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Vehicle Number
+                </span>
+
+                <span class="slot-detail-value">
+                    ${slot.vehicle_number || '-'}
+                </span>
+
+            </div>
+
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Vehicle Type
+                </span>
+
+                <span class="slot-detail-value">
+                    ${slot.vehicle_type || '-'}
+                </span>
+
+            </div>
+
+
+            <div class="slot-detail-row">
+
+                <span class="slot-detail-label">
+                    Entry Time
+                </span>
+
+                <span class="slot-detail-value">
+                    ${entryTime}
+                </span>
+
+            </div>
+
+        `;
+
+    } catch (error) {
+
+        console.error(
+            'Slot details error:',
+            error
+        );
+
+        content.innerHTML = `
+
+            <div
+                style="
+                    text-align:center;
+                    padding:20px;
+                    color:#b91c1c;
+                "
+            >
+                Unable to load slot details.
+            </div>
+
+        `;
+    }
+}
+
+/* =========================================
+   CLOSE SLOT DETAILS MODAL
+========================================= */
+
+function closeSlotDetails() {
+
+    const modal =
+        document.getElementById('slotDetailsModal');
+
+    if (modal) {
+
+        modal.classList.remove('show');
+
+    }
+}
+
+
+/* =========================================
+   SLOT CLICK HANDLER
+========================================= */
+
+function setupSlotClickHandlers() {
+
+    const grid =
+        document.getElementById('slotGrid');
+
+    if (!grid) return;
+
+
+    grid.addEventListener(
+        'click',
+        function (event) {
+
+            const slotCard =
+                event.target.closest('.slot');
+
+            if (!slotCard) return;
+
+
+            const slotId =
+                slotCard.dataset.slotId;
+
+
+            if (slotId) {
+
+                openSlotDetails(slotId);
+
+            }
+
+        }
+    );
+}
 /* =========================================
    SLOTS PAGINATION
 ========================================= */
@@ -2647,12 +2972,13 @@ document
    WINDOW LOAD
 ========================================= */
 
-window.onload =
-    async () => {
+window.onload = async () => {
 
-        await loadDashboardData();
+    setupSlotClickHandlers();
 
-        await loadSlots();
+    await loadDashboardData();
 
-        await loadLogs(1);
-    };
+    await loadSlots();
+
+    await loadLogs(1);
+};

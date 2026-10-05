@@ -20,6 +20,33 @@
 
 <body>
 
+    <!-- SLOT DETAILS MODAL -->
+    <div id="slotDetailsModal" class="slot-modal">
+
+        <div class="slot-modal-overlay" onclick="closeSlotDetails()"></div>
+
+        <div class="slot-modal-box">
+
+            <button
+                type="button"
+                class="slot-modal-close"
+                onclick="closeSlotDetails()"
+            >
+                ×
+            </button>
+
+            <h2 id="slotDetailsTitle">
+                Slot Details
+            </h2>
+
+            <div id="slotDetailsContent"></div>
+
+        </div>
+
+    </div>
+
+    <!-- YOUR EXISTING CONTENT -->
+
   <!-- alert / toast -->
   <div id="alertBox" class="alert hidden"></div>
 
