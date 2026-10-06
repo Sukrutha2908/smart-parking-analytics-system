@@ -1752,6 +1752,34 @@ async function registerEntry() {
     }
 }
 
+function clearVehicleNumber() {
+    const input = document.getElementById('vehicleNum');
+    const clearBtn = document.getElementById('clearVehicleBtn');
+
+    input.value = '';
+    clearBtn.style.display = 'none';
+
+    input.focus();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const input = document.getElementById('vehicleNum');
+    const clearBtn = document.getElementById('clearVehicleBtn');
+
+    if (!input || !clearBtn) return;
+
+    input.addEventListener('input', () => {
+
+        if (input.value.trim() !== '') {
+            clearBtn.style.display = 'flex';
+        } else {
+            clearBtn.style.display = 'none';
+        }
+
+    });
+
+});
 
 /* =========================================
    VEHICLE EXIT
@@ -1893,10 +1921,11 @@ async function processExit() {
                 </span>
 
                 <span class="value">
-                    ${data.duration_minutes} min
+                    ${Math.floor(data.duration_minutes / 60)} hours
+                    ${data.duration_minutes % 60} minutes
                 </span>
 
-            </div>
+            </div}
 
 
             <div class="receipt-row">
@@ -2466,6 +2495,39 @@ async function loadLogs(page = 1) {
         total
     );
 }
+
+function clearVehicleSearch() {
+
+    const input = document.getElementById('searchVehicle');
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    input.value = '';
+
+    clearBtn.style.display = 'none';
+
+    input.focus();
+
+    loadLogs(1);
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const input = document.getElementById('searchVehicle');
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    if (!input || !clearBtn) return;
+
+    input.addEventListener('input', () => {
+
+        clearBtn.style.display =
+            input.value.trim() !== ''
+                ? 'flex'
+                : 'none';
+
+    });
+
+});
 
 /* =========================================
    PARKING LOG PAGINATION

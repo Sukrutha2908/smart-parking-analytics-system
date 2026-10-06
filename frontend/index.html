@@ -353,13 +353,25 @@
           Assign an incoming vehicle to the next open slot
         </p>
 
-        <div class="form-row">
-          <label for="vehicleNum">Vehicle number</label>
-          <input
-            type="text"
-            id="vehicleNum"
-            placeholder="e.g. AP39AB1234"
-          />
+        <div class="vehicle-input-wrapper">
+
+            <input
+                type="text"
+                id="vehicleNum"
+                placeholder="e.g. AP39AB1234"
+                autocomplete="off"
+            />
+
+            <button
+                type="button"
+                class="clear-vehicle-btn"
+                id="clearVehicleBtn"
+                onclick="clearVehicleNumber()"
+                aria-label="Clear vehicle number"
+            >
+                ×
+            </button>
+
         </div>
 
         <div class="form-row">
@@ -462,38 +474,53 @@
 
         <div class="toolbar">
 
-          <input
-            type="text"
-            id="searchVehicle"
-            placeholder="Search vehicle number"
-            style="max-width:220px"
-          />
+            <div class="search-input-wrapper">
 
-          <select id="logStatusFilter" class="filter-select">
+                <input
+                    type="text"
+                    id="searchVehicle"
+                    placeholder="Search vehicle number"
+                    autocomplete="off"
+                />
 
-            <option value="">
-              All status
-            </option>
+                <button
+                    type="button"
+                    id="clearSearchBtn"
+                    class="clear-search-btn"
+                    onclick="clearVehicleSearch()"
+                    aria-label="Clear search"
+                >
+                    ×
+                </button>
 
-            <option value="occupied">
-              Occupied
-            </option>
+            </div>
 
-            <option value="exited">
-              Exited
-            </option>
 
-          </select>
+            <select id="logStatusFilter" class="filter-select">
 
-          <button
-            class="btn primary"
-            onclick="loadLogs(1)"
-          >
-            Filter
-          </button>
+                <option value="">
+                    All status
+                </option>
+
+                <option value="occupied">
+                    Occupied
+                </option>
+
+                <option value="exited">
+                    Exited
+                </option>
+
+            </select>
+
+
+            <button
+                class="btn primary"
+                onclick="loadLogs(1)"
+            >
+                Filter
+            </button>
 
         </div>
-
 
         <div class="logs-table-wrap">
 
